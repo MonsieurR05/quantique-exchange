@@ -6,7 +6,9 @@
    npm install
 
 2. Add to the env file: 
+
    2.1 API_TOKEN=
+   
    2.2 BASE_URL=
 
 3. Start the server:
