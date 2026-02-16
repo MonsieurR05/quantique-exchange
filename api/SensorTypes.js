@@ -1,5 +1,6 @@
 //============================================================
 // SensorTypes.js
+// NOTE: You could extend this class, but not necessary.
 // Created by Corey Ford - Feb 2026
 //============================================================
 

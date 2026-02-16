@@ -1,5 +1,6 @@
 //============================================================
 // SensorAPIClient.js
+// NOTE: You should not need to change this class at any point.
 // Created by Corey Ford - Feb 2026
 //============================================================
 

@@ -1,5 +1,6 @@
 //============================================================
 // sketch.js
+// NOTE: This is the likley entry point for your app.
 // Created by Corey Ford - Feb 2026
 //============================================================
 
