@@ -76,24 +76,76 @@ export default class DataWrapper {
   }
 
   /**
-   * Get the latest value of a specific field for a sensor.
-   * If the field is omitted, returns the full latest data object.
+   * Get all values for a specific sensor.
+   * If the field is omitted, returns all full data objects for that sensor.
    * @param {string} name - The name of the sensor.
    * @param {string} [field] - Optional field name to retrieve.
-   * @returns {any|null} Latest value of the specified field, full object, 
-   *                     or null if sensor/field/data is unavailable.
+   * @returns {any[]|null} Array of values (or full objects),
+   *                       or null if sensor/data is unavailable.
    */
-  getLatest(name, field) {
+  getAll(name, field) {
     const endpoint = this.sensorLookup[name];
     if (!endpoint) return null;
 
     const dataArray = this.apiClient.getRawData()[endpoint];
     if (!dataArray?.length) return null;
 
-    const latestItem = dataArray.filter(item => item.name === name).at(-1);
-    if (!latestItem) return null;
+    // Filter all entries for this sensor name
+    const items = dataArray.filter(item => item.name === name);
+    if (!items.length) return [];
 
-    return field ? latestItem[field] ?? null : latestItem;
+    // If a field is specified, return only that field's values
+    return field
+      ? items.map(item => item[field] ?? null)
+      : items;
+  }
+
+
+  /**
+   * Get the latest value of a specific field for a sensor.
+   * If the field is omitted, returns the full latest data object.
+   * @param {string} name - The name of the sensor.
+   * @param {string} [field] - Optional field name to retrieve.
+   * @returns {any|null} Latest value of the specified field, full object,
+   *                     or null if sensor/field/data is unavailable.
+   */
+  getLatest(name, field) {
+    const all = this.getAll(name);
+    if (!all) return null;        // invalid sensor
+    if (!all.length) return null; // no data
+
+    const latestItem = all.at(-1);
+
+    return field
+      ? latestItem[field] ?? null
+      : latestItem;
+  }
+
+  /**
+   * Get all values for a sensor since a specific time.
+   * If field is omitted, returns full data objects.
+   *
+   * @param {string} name - Sensor name
+   * @param {string|Date|number} time - Start time (inclusive)
+   * @param {string} [field] - Optional field name
+   * @returns {any[]|null} Array of matching values/objects, or null if invalid sensor
+   */
+  getSinceTime(name, time, field) {
+    const all = this.getAll(name);
+    if (!all) return null; // invalid sensor
+
+    const sinceTime = new Date(time).getTime();
+
+    if (isNaN(sinceTime)) return [];
+
+    const filtered = all.filter(item => {
+      const itemTime = new Date(item.time).getTime();
+      return itemTime >= sinceTime;
+    });
+
+    return field
+      ? filtered.map(item => item[field] ?? null)
+      : filtered;
   }
 
   /**
