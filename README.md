@@ -1,4 +1,4 @@
-# p5 ES6 API Project
+# UG Software Engineering Project
 
 ## Setup
 
@@ -12,3 +12,7 @@
 
 4. Open in browser:
    http://localhost:3001
+
+## TODO
+
+Remember to provide instructions on how to run the project for your examiners.
