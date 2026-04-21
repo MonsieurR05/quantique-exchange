@@ -1,59 +1,74 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import DataWrapper from "../../api/DataWrapper.js";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+} from "recharts";
 
-export default function P5Sketch() {
+export default function SensorDashboard() {
+  const [dataWrapper, setDataWrapper] = useState(null);
+  const [sensorData, setSensorData] = useState({});
+
   useEffect(() => {
-    let dataWrapper;
+    let wrapper = new DataWrapper();
     let intervalId;
 
     async function initialise() {
-      try {
-        dataWrapper = new DataWrapper();
-        await dataWrapper.init();
+      await wrapper.init();
+      setDataWrapper(wrapper);
 
-        console.log("DataWrapper initialised");
+      intervalId = setInterval(() => {
+        const allSensors = wrapper.getSensorNames();
+        const updatedData = {};
 
-        intervalId = setInterval(() => {
-          console.log(
-            "Most recent DoorSensor302 values:",
-            dataWrapper.getLatest("DoorSensor302")
-          );
+        allSensors.forEach((sensorName) => {
+          const raw = wrapper.getAll(sensorName);
 
-          console.log(
-            "Most recent DoorSensor302 contact:",
-            dataWrapper.getLatest("DoorSensor302", "contact")
-          );
+          if (!raw || raw.length === 0) return;
 
-          const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
-          console.log(
-            "DoorSensor302 times ten mins ago:",
-            dataWrapper.getSinceTime("DoorSensor302", tenMinutesAgo, "time")
-          );
+          const fields = wrapper.getFieldsForSensor(sensorName);
 
-          console.log("=============");
-        }, 5000);
-      } catch (err) {
-        console.error("Initialise failed:", err);
-      }
+          // pick first non-time field
+          const valueField = fields.find((f) => f !== "time");
+
+          const formatted = raw.map((d) => ({
+            time: new Date(d.time).toLocaleTimeString(),
+            value: d[valueField] ?? 0,
+          }));
+
+          updatedData[sensorName] = formatted;
+        });
+
+        setSensorData(updatedData);
+      }, 5000);
     }
 
     initialise();
 
-    return () => {
-      if (intervalId) clearInterval(intervalId);
-      if (dataWrapper?.apiClient) {
-        dataWrapper.apiClient.stopPolling();
-      }
-    };
+    return () => clearInterval(intervalId);
   }, []);
 
   return (
-    <div
-      style={{
-        width: "910px",
-        height: "610px",
-        backgroundColor: "black",
-      }}
-    />
+    <div style={{ background: "#111", padding: "20px", color: "white" }}>
+      <h2>All Sensor Data Dashboard</h2>
+
+      {Object.entries(sensorData).map(([sensorName, data]) => (
+        <div key={sensorName} style={{ marginBottom: "40px" }}>
+          <h3>{sensorName}</h3>
+
+          <LineChart width={800} height={250} data={data}>
+            <CartesianGrid stroke="#333" />
+            <XAxis dataKey="time" stroke="#aaa" />
+            <YAxis stroke="#aaa" />
+            <Tooltip />
+            <Line type="monotone" dataKey="value" stroke="#00ff99" />
+          </LineChart>
+        </div>
+      ))}
+    </div>
   );
 }
