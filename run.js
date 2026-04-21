@@ -7,6 +7,7 @@
 import express from "express";
 import dotenv from "dotenv";
 import path from "path";
+import cors from "cors";
 import { fileURLToPath } from "url";
 
 //============================================================
@@ -21,6 +22,8 @@ const __dirname = path.dirname(__filename);
 
 /** @constant {express.Express} app - Express app to run server. */
 const app = express();
+app.use(cors());
+
 
 /** @constant {number} PORT - Port number the server listens on. */
 const PORT = 3001;

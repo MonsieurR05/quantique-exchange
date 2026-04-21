@@ -40,7 +40,7 @@ export default class SensorAPIClient {
    * @throws Will throw an error if fetching /config fails.
    */
   async init() {
-    const configResponse = await fetch("/config");
+    const configResponse = await fetch("http://localhost:3001/config");
     if (!configResponse.ok) throw new Error("Failed to load config");
 
     const config = await configResponse.json();
