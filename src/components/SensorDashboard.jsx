@@ -8,6 +8,9 @@ import {
   CartesianGrid,
 } from "recharts";
 
+import MomentumStrategy from "../strategies/MomentumStrategy";
+import MovingAverageStrategy from "../strategies/MovingAverageStrategy";
+
 // -----------------------------
 // VALUE EXTRACTION
 // -----------------------------
@@ -57,35 +60,6 @@ const preprocessData = (raw) => {
 };
 
 // -----------------------------
-// STRATEGY 1: MOMENTUM
-// -----------------------------
-const momentumSignal = (data) => {
-  if (data.length < 2) return "HOLD";
-
-  const last = data[data.length - 1];
-
-  if (last.return > 0) return "BUY";
-  if (last.return < 0) return "SELL";
-  return "HOLD";
-};
-
-// -----------------------------
-// STRATEGY 2: MOVING AVERAGE
-// -----------------------------
-const movingAverageSignal = (data, window = 10) => {
-  if (data.length < window) return "HOLD";
-
-  const slice = data.slice(-window);
-  const avg = slice.reduce((sum, d) => sum + d.value, 0) / window;
-
-  const latest = data[data.length - 1].value;
-
-  if (latest > avg) return "BUY";
-  if (latest < avg) return "SELL";
-  return "HOLD";
-};
-
-// -----------------------------
 // SIGNAL COLOR
 // -----------------------------
 const getSignalColor = (signal) => {
@@ -99,6 +73,11 @@ const getSignalColor = (signal) => {
 // -----------------------------
 export default function SensorDashboard() {
   const [sensorData, setSensorData] = useState({});
+
+  const strategies = [
+    new MomentumStrategy(),
+    new MovingAverageStrategy(10),
+  ];
 
   useEffect(() => {
     const fetchData = async () => {
@@ -135,8 +114,11 @@ export default function SensorDashboard() {
       </h2>
 
       {Object.entries(sensorData).map(([sensorName, data]) => {
-        const momentum = momentumSignal(data);
-        const ma = movingAverageSignal(data);
+        const signals = strategies.map((strategy) => ({
+          name: strategy.name,
+          signal: strategy.generateSignal(data),
+        }));
+
         const latest = data[data.length - 1];
 
         return (
@@ -151,11 +133,13 @@ export default function SensorDashboard() {
             }}
           >
             {/* HEADER */}
-            <div style={{
-              display: "flex",
-              justifyContent: "space-between",
-              marginBottom: "10px"
-            }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                marginBottom: "10px",
+              }}
+            >
               <h3 style={{ margin: 0 }}>
                 {sensorName} <span style={{ color: "#666" }}>(Asset)</span>
               </h3>
@@ -165,12 +149,14 @@ export default function SensorDashboard() {
             </div>
 
             {/* DATA PANEL */}
-            <div style={{
-              display: "flex",
-              gap: "30px",
-              marginBottom: "10px",
-              fontSize: "14px"
-            }}>
+            <div
+              style={{
+                display: "flex",
+                gap: "30px",
+                marginBottom: "10px",
+                fontSize: "14px",
+              }}
+            >
               <div>
                 <div>Price</div>
                 <strong>{latest?.value}</strong>
@@ -181,19 +167,14 @@ export default function SensorDashboard() {
                 <strong>{latest?.return.toFixed(2)}</strong>
               </div>
 
-              <div>
-                <div>Momentum</div>
-                <strong style={{ color: getSignalColor(momentum) }}>
-                  {momentum}
-                </strong>
-              </div>
-
-              <div>
-                <div>MA Signal</div>
-                <strong style={{ color: getSignalColor(ma) }}>
-                  {ma}
-                </strong>
-              </div>
+              {signals.map(({ name, signal }) => (
+                <div key={name}>
+                  <div>{name}</div>
+                  <strong style={{ color: getSignalColor(signal) }}>
+                    {signal}
+                  </strong>
+                </div>
+              ))}
             </div>
 
             {/* CHART */}
