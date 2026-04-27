@@ -18,6 +18,8 @@ import { getSignalColor } from "../utils/signalStyles";
 // -----------------------------
 export default function SensorDashboard() {
   const [sensorData, setSensorData] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const strategies = [
     new MomentumStrategy(),
@@ -28,8 +30,12 @@ export default function SensorDashboard() {
     const fetchData = async () => {
       try {
         const res = await fetch("http://localhost:5001/data");
-        const json = await res.json();
 
+        if (!res.ok) {
+          throw new Error("Backend returned an error");
+        }
+
+        const json = await res.json();
         const updated = {};
 
         Object.entries(json).forEach(([sensorName, raw]) => {
@@ -41,8 +47,12 @@ export default function SensorDashboard() {
         });
 
         setSensorData(updated);
+        setError(null);
       } catch (err) {
         console.error("Fetch failed:", err);
+        setError("Could not load live sensor data. Please check the backend server.");
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -54,9 +64,40 @@ export default function SensorDashboard() {
 
   return (
     <div style={{ background: "#0a0a0a", padding: "20px", color: "white" }}>
-      <h2 style={{ marginBottom: "20px" }}>
+      <h2 style={{ marginBottom: "10px" }}>
         Quantique Exchange Dashboard
       </h2>
+
+      <p
+        style={{
+          color: "#aaa",
+          maxWidth: "850px",
+          lineHeight: "1.5",
+          marginBottom: "25px",
+        }}
+      >
+        Live UAL IoT sensor readings are converted into financial-style assets.
+        Each card shows the latest sensor value as a price, calculates movement as a return,
+        and applies trading strategies to generate BUY, SELL, or HOLD signals.
+      </p>
+
+      {loading && (
+        <p style={{ color: "#aaa" }}>
+          Loading live UAL sensor data...
+        </p>
+      )}
+
+      {error && (
+        <p style={{ color: "#ff4d4d" }}>
+          {error}
+        </p>
+      )}
+
+      {!loading && !error && Object.keys(sensorData).length === 0 && (
+        <p style={{ color: "#aaa" }}>
+          No sensor data is currently available.
+        </p>
+      )}
 
       {Object.entries(sensorData).map(([sensorName, data]) => {
         const signals = strategies.map((strategy) => ({
