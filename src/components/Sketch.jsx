@@ -8,7 +8,9 @@ import {
   CartesianGrid,
 } from "recharts";
 
-// 🔹 Helper to extract correct value from any sensor type
+// -----------------------------
+// VALUE EXTRACTION
+// -----------------------------
 const getValue = (d) => {
   if (d.contact !== undefined) return d.contact ? 1 : 0;
   if (d.occupancy !== undefined) return d.occupancy;
@@ -19,94 +21,197 @@ const getValue = (d) => {
   return 0;
 };
 
+// -----------------------------
+// DOWNSAMPLE (fix chart noise)
+// -----------------------------
+const downsample = (data, step = 20) => {
+  return data.filter((_, i) => i % step === 0);
+};
+
+// -----------------------------
+// PREPROCESSING
+// -----------------------------
+const preprocessData = (raw) => {
+  if (!raw || raw.length === 0) return [];
+
+  const sorted = [...raw].sort(
+    (a, b) => new Date(a.time) - new Date(b.time)
+  );
+
+  const base = sorted.map((d) => ({
+    time: new Date(d.time),
+    displayTime: new Date(d.time).toLocaleTimeString(),
+    value: getValue(d),
+  }));
+
+  const withReturns = base.map((d, i) => {
+    if (i === 0) return { ...d, return: 0 };
+
+    return {
+      ...d,
+      return: d.value - base[i - 1].value,
+    };
+  });
+
+  return downsample(withReturns, 20);
+};
+
+// -----------------------------
+// STRATEGY 1: MOMENTUM
+// -----------------------------
+const momentumSignal = (data) => {
+  if (data.length < 2) return "HOLD";
+
+  const last = data[data.length - 1];
+
+  if (last.return > 0) return "BUY";
+  if (last.return < 0) return "SELL";
+  return "HOLD";
+};
+
+// -----------------------------
+// STRATEGY 2: MOVING AVERAGE
+// -----------------------------
+const movingAverageSignal = (data, window = 10) => {
+  if (data.length < window) return "HOLD";
+
+  const slice = data.slice(-window);
+  const avg = slice.reduce((sum, d) => sum + d.value, 0) / window;
+
+  const latest = data[data.length - 1].value;
+
+  if (latest > avg) return "BUY";
+  if (latest < avg) return "SELL";
+  return "HOLD";
+};
+
+// -----------------------------
+// SIGNAL COLOR
+// -----------------------------
+const getSignalColor = (signal) => {
+  if (signal === "BUY") return "#00ff9f";
+  if (signal === "SELL") return "#ff4d4d";
+  return "#aaa";
+};
+
+// -----------------------------
+// MAIN COMPONENT
+// -----------------------------
 export default function SensorDashboard() {
   const [sensorData, setSensorData] = useState({});
-  const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const res = await fetch("http://localhost:5001/data");
-
-        if (!res.ok) {
-          throw new Error(`Backend error: ${res.status}`);
-        }
-
         const json = await res.json();
-
-        console.log("Fetched data:", json); // DEBUG
 
         const updated = {};
 
         Object.entries(json).forEach(([sensorName, raw]) => {
-          if (!raw || raw.length === 0) return;
+          const processed = preprocessData(raw);
 
-          const formatted = raw.map((d) => ({
-            time: new Date(d.time).toLocaleTimeString(),
-            value: getValue(d),
-          }));
-
-          updated[sensorName] = formatted;
+          if (processed.length > 0) {
+            updated[sensorName] = processed;
+          }
         });
 
         setSensorData(updated);
-        setError(null);
-
       } catch (err) {
         console.error("Fetch failed:", err);
-        setError(err.message);
       }
     };
 
-    fetchData(); // initial call
+    fetchData();
     const interval = setInterval(fetchData, 5000);
 
     return () => clearInterval(interval);
   }, []);
 
   return (
-    <div style={{ background: "#111", padding: "20px", color: "white" }}>
-      <h2>Live Sensor Dashboard</h2>
+    <div style={{ background: "#0a0a0a", padding: "20px", color: "white" }}>
+      <h2 style={{ marginBottom: "20px" }}>
+        Quantique Exchange Dashboard
+      </h2>
 
-      {/* 🔴 Error display */}
-      {error && (
-        <p style={{ color: "red" }}>
-          Error: {error}
-        </p>
-      )}
+      {Object.entries(sensorData).map(([sensorName, data]) => {
+        const momentum = momentumSignal(data);
+        const ma = movingAverageSignal(data);
+        const latest = data[data.length - 1];
 
-      {/* 🟡 No data */}
-      {!error && Object.keys(sensorData).length === 0 && (
-        <p>No data received yet...</p>
-      )}
+        return (
+          <div
+            key={sensorName}
+            style={{
+              marginBottom: "20px",
+              padding: "15px",
+              background: "#111",
+              border: "1px solid #222",
+              borderRadius: "6px",
+            }}
+          >
+            {/* HEADER */}
+            <div style={{
+              display: "flex",
+              justifyContent: "space-between",
+              marginBottom: "10px"
+            }}>
+              <h3 style={{ margin: 0 }}>
+                {sensorName} <span style={{ color: "#666" }}>(Asset)</span>
+              </h3>
+              <span style={{ color: "#888" }}>
+                Points: {data.length}
+              </span>
+            </div>
 
-      {/* 📊 Charts */}
-      {Object.entries(sensorData).map(([sensorName, data]) => (
-        <div
-          key={sensorName}
-          style={{
-            marginBottom: "40px",
-            padding: "15px",
-            background: "#1a1a1a",
-            borderRadius: "8px",
-          }}
-        >
-          <h3>{sensorName}</h3>
+            {/* DATA PANEL */}
+            <div style={{
+              display: "flex",
+              gap: "30px",
+              marginBottom: "10px",
+              fontSize: "14px"
+            }}>
+              <div>
+                <div>Price</div>
+                <strong>{latest?.value}</strong>
+              </div>
 
-          {/* Debug info */}
-          <p style={{ fontSize: "12px", color: "#aaa" }}>
-            Data points: {data.length}
-          </p>
+              <div>
+                <div>Return</div>
+                <strong>{latest?.return.toFixed(2)}</strong>
+              </div>
 
-          <LineChart width={800} height={250} data={data}>
-            <CartesianGrid stroke="#333" />
-            <XAxis dataKey="time" stroke="#aaa" />
-            <YAxis stroke="#aaa" />
-            <Tooltip />
-            <Line type="monotone" dataKey="value" stroke="#00ff99" />
-          </LineChart>
-        </div>
-      ))}
+              <div>
+                <div>Momentum</div>
+                <strong style={{ color: getSignalColor(momentum) }}>
+                  {momentum}
+                </strong>
+              </div>
+
+              <div>
+                <div>MA Signal</div>
+                <strong style={{ color: getSignalColor(ma) }}>
+                  {ma}
+                </strong>
+              </div>
+            </div>
+
+            {/* CHART */}
+            <LineChart width={800} height={200} data={data}>
+              <CartesianGrid stroke="#222" />
+              <XAxis dataKey="displayTime" stroke="#666" />
+              <YAxis stroke="#666" />
+              <Tooltip />
+              <Line
+                type="monotone"
+                dataKey="value"
+                stroke="#00ff9f"
+                dot={false}
+              />
+            </LineChart>
+          </div>
+        );
+      })}
     </div>
   );
 }
