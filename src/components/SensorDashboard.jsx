@@ -10,63 +10,8 @@ import {
 
 import MomentumStrategy from "../strategies/MomentumStrategy";
 import MovingAverageStrategy from "../strategies/MovingAverageStrategy";
-
-// -----------------------------
-// VALUE EXTRACTION
-// -----------------------------
-const getValue = (d) => {
-  if (d.contact !== undefined) return d.contact ? 1 : 0;
-  if (d.occupancy !== undefined) return d.occupancy;
-  if (d.temperature !== undefined) return d.temperature;
-  if (d.humidity !== undefined) return d.humidity;
-  if (d.illumination !== undefined) return d.illumination;
-  if (d.water_leak !== undefined) return d.water_leak ? 1 : 0;
-  return 0;
-};
-
-// -----------------------------
-// DOWNSAMPLE (fix chart noise)
-// -----------------------------
-const downsample = (data, step = 20) => {
-  return data.filter((_, i) => i % step === 0);
-};
-
-// -----------------------------
-// PREPROCESSING
-// -----------------------------
-const preprocessData = (raw) => {
-  if (!raw || raw.length === 0) return [];
-
-  const sorted = [...raw].sort(
-    (a, b) => new Date(a.time) - new Date(b.time)
-  );
-
-  const base = sorted.map((d) => ({
-    time: new Date(d.time),
-    displayTime: new Date(d.time).toLocaleTimeString(),
-    value: getValue(d),
-  }));
-
-  const withReturns = base.map((d, i) => {
-    if (i === 0) return { ...d, return: 0 };
-
-    return {
-      ...d,
-      return: d.value - base[i - 1].value,
-    };
-  });
-
-  return downsample(withReturns, 20);
-};
-
-// -----------------------------
-// SIGNAL COLOR
-// -----------------------------
-const getSignalColor = (signal) => {
-  if (signal === "BUY") return "#00ff9f";
-  if (signal === "SELL") return "#ff4d4d";
-  return "#aaa";
-};
+import { preprocessData } from "../utils/sensorProcessing";
+import { getSignalColor } from "../utils/signalStyles";
 
 // -----------------------------
 // MAIN COMPONENT
@@ -143,6 +88,7 @@ export default function SensorDashboard() {
               <h3 style={{ margin: 0 }}>
                 {sensorName} <span style={{ color: "#666" }}>(Asset)</span>
               </h3>
+
               <span style={{ color: "#888" }}>
                 Points: {data.length}
               </span>
