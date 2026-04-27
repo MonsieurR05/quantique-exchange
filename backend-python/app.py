@@ -1,15 +1,19 @@
 from flask import Flask, jsonify
 from flask_cors import CORS
 import requests
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
 
-# ---------------------------------------------------
-# YOUR ACTUAL API CONFIG (from you)
-# ---------------------------------------------------
-BASE_URL = "http://your-sensor-api-host:3000"
-API_KEY = "REDACTED_API_TOKEN"
+BASE_URL = os.getenv("BASE_URL")
+API_KEY = os.getenv("API_TOKEN")
+
+if not BASE_URL or not API_KEY:
+    raise RuntimeError("Missing BASE_URL or API_TOKEN in .env file")
 
 HEADERS = {
     "Authorization": f"Bearer {API_KEY}",

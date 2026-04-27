@@ -1,6 +1,6 @@
 import React from "react";
-import P5Sketch from "./components/Sketch";
+import SensorDashboard from "./components/SensorDashboard";
 
 export default function App() {
-  return <P5Sketch />;
+  return <SensorDashboard />;
 }
