@@ -10,6 +10,7 @@ import {
 
 import MomentumStrategy from "../strategies/MomentumStrategy";
 import MovingAverageStrategy from "../strategies/MovingAverageStrategy";
+import OrderFlowImbalanceStrategy from "../strategies/OrderFlowImbalanceStrategy";
 import { preprocessData } from "../utils/sensorProcessing";
 import { getSignalColor } from "../utils/signalStyles";
 
@@ -24,6 +25,7 @@ export default function SensorDashboard() {
   const strategies = [
     new MomentumStrategy(),
     new MovingAverageStrategy(10),
+    new OrderFlowImbalanceStrategy(10),
   ];
 
   useEffect(() => {

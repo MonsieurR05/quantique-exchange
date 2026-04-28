@@ -1,3 +1,9 @@
+/**
+ * Moving average strategy.
+ * Compares the latest sensor-derived value against the average of recent values.
+ * This gives a simple trend-following signal for the dashboard.
+ */
+
 import TradingStrategy from "./TradingStrategy";
 
 export default class MomentumStrategy extends TradingStrategy {
