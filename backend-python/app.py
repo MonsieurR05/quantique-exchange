@@ -82,6 +82,15 @@ def data():
     result = fetch_all_data()
     return jsonify(result)
 
+@app.route("/summary")
+def summary():
+    result = fetch_all_data()
+
+    return jsonify({
+        sensor_name: len(values)
+        for sensor_name, values in result.items()
+    })
+
 # ---------------------------------------------------
 # RUN SERVER
 # ---------------------------------------------------
