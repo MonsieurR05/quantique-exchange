@@ -1,3 +1,9 @@
+/**
+ * Momentum strategy.
+ * Generates a BUY signal when the latest sensor-derived return is positive,
+ * a SELL signal when it is negative, and HOLD when there is no movement.
+ */
+
 import TradingStrategy from "./TradingStrategy";
 
 export default class MomentumStrategy extends TradingStrategy {

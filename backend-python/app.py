@@ -77,10 +77,26 @@ def fetch_all_data():
 def home():
     return "Backend running"
 
+@app.route("/health")
+def health():
+    return jsonify({
+        "status": "ok",
+        "message": "Backend is running"
+    })
+
 @app.route("/data")
 def data():
     result = fetch_all_data()
     return jsonify(result)
+
+@app.route("/summary")
+def summary():
+    result = fetch_all_data()
+
+    return jsonify({
+        sensor_name: len(values)
+        for sensor_name, values in result.items()
+    })
 
 # ---------------------------------------------------
 # RUN SERVER
