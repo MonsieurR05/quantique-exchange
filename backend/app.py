@@ -98,6 +98,26 @@ def summary():
         for sensor_name, values in result.items()
     })
 
+# @app.route("/latest")  implement later if needed
+
+@app.route("/sensor/<sensor_name>")
+def sensor(sensor_name):
+    result = fetch_all_data()
+
+    if sensor_name not in result:
+        return jsonify({
+            "error": "Sensor not found",
+            "sensor": sensor_name,
+            "available_sensors": list(result.keys())
+        }), 404
+    
+    return jsonify({
+        "sensor": sensor_name,
+        "count": len(result[sensor_name]),
+        "data": result[sensor_name]
+    })
+
+
 # ---------------------------------------------------
 # RUN SERVER
 # ---------------------------------------------------
