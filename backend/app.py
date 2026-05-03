@@ -71,6 +71,24 @@ def fetch_all_data():
     return grouped
 
 # ---------------------------------------------------
+# GET LATEST READINGS
+# ---------------------------------------------------
+def get_latest_readings(grouped_data):
+    latest = {}
+
+    for sensor_name, readings in grouped_data.items():
+        if not readings:
+            continue
+
+        sorted_readings  = sorted(
+            readings,
+            key=lambda x: x.get("timestamp", 0),
+        )
+
+        latest[sensor_name] = sorted_readings[-1]
+    return latest
+
+# ---------------------------------------------------
 # ROUTES
 # ---------------------------------------------------
 @app.route("/")
@@ -98,7 +116,15 @@ def summary():
         for sensor_name, values in result.items()
     })
 
-# @app.route("/latest")  implement later if needed
+@app.route("/latest")
+def latest():
+    result = fetch_all_data()
+    latest_readings = get_latest_readings(result)
+
+    return jsonify({
+        "count": len(latest_readings),
+        "latest_readings": latest_readings
+    })
 
 @app.route("/sensor/<sensor_name>")
 def sensor(sensor_name):

@@ -67,7 +67,7 @@ def main():
 
     parser.add_argument(
         "command",
-        choices=["health", "summary", "data"],
+        choices=["health", "summary", "data", "latest"],
         help="Backend route to call.",
     )
 
@@ -82,7 +82,7 @@ def main():
     route_map = {
         "health": "/health",
         "summary": "/summary",
-        # "latest": "/latest",
+        "latest": "/latest",
         "data": "/data",
     }
 
