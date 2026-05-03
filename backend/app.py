@@ -43,7 +43,7 @@ def fetch_all_data():
             url = f"{BASE_URL}/{endpoint}"
             print("Fetching:", url)
 
-            res = requests.get(url, headers=HEADERS)
+            res = requests.get(url, headers=HEADERS, timeout=8)
 
             print("Status:", res.status_code)
 
