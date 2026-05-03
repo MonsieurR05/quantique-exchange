@@ -33,6 +33,12 @@ ENDPOINTS = [
 ]
 
 # ---------------------------------------------------
+# BACKEND CONFIG CONSTANTS
+# ---------------------------------------------------
+REQUEST_TIMEOUT_SECONDS = 8
+SERVER_PORT = 5001
+
+# ---------------------------------------------------
 # FETCH + GROUP DATA (same logic as DataWrapper)
 # ---------------------------------------------------
 def fetch_all_data():
@@ -43,7 +49,11 @@ def fetch_all_data():
             url = f"{BASE_URL}/{endpoint}"
             print("Fetching:", url)
 
-            res = requests.get(url, headers=HEADERS, timeout=8)
+            res = requests.get(
+                url, 
+                headers=HEADERS, 
+                timeout=REQUEST_TIMEOUT_SECONDS
+            )
 
             print("Status:", res.status_code)
 
@@ -148,4 +158,4 @@ def sensor(sensor_name):
 # RUN SERVER
 # ---------------------------------------------------
 if __name__ == "__main__":
-    app.run(port=5001, debug=True)
+    app.run(port=SERVER_PORT, debug=True)
