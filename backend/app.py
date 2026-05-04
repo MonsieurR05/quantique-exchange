@@ -33,6 +33,12 @@ ENDPOINTS = [
 ]
 
 # ---------------------------------------------------
+# BACKEND CONFIG CONSTANTS
+# ---------------------------------------------------
+REQUEST_TIMEOUT_SECONDS = 8
+SERVER_PORT = 5001
+
+# ---------------------------------------------------
 # FETCH + GROUP DATA (same logic as DataWrapper)
 # ---------------------------------------------------
 def fetch_all_data():
@@ -43,7 +49,11 @@ def fetch_all_data():
             url = f"{BASE_URL}/{endpoint}"
             print("Fetching:", url)
 
-            res = requests.get(url, headers=HEADERS)
+            res = requests.get(
+                url, 
+                headers=HEADERS, 
+                timeout=REQUEST_TIMEOUT_SECONDS
+            )
 
             print("Status:", res.status_code)
 
@@ -69,6 +79,24 @@ def fetch_all_data():
     print("Final sensors:", list(grouped.keys()))
 
     return grouped
+
+# ---------------------------------------------------
+# GET LATEST READINGS
+# ---------------------------------------------------
+def get_latest_readings(grouped_data):
+    latest = {}
+
+    for sensor_name, readings in grouped_data.items():
+        if not readings:
+            continue
+
+        sorted_readings  = sorted(
+            readings,
+            key=lambda x: x.get("timestamp", 0),
+        )
+
+        latest[sensor_name] = sorted_readings[-1]
+    return latest
 
 # ---------------------------------------------------
 # ROUTES
@@ -98,8 +126,36 @@ def summary():
         for sensor_name, values in result.items()
     })
 
+@app.route("/latest")
+def latest():
+    result = fetch_all_data()
+    latest_readings = get_latest_readings(result)
+
+    return jsonify({
+        "count": len(latest_readings),
+        "latest_readings": latest_readings
+    })
+
+@app.route("/sensor/<sensor_name>")
+def sensor(sensor_name):
+    result = fetch_all_data()
+
+    if sensor_name not in result:
+        return jsonify({
+            "error": "Sensor not found",
+            "sensor": sensor_name,
+            "available_sensors": list(result.keys())
+        }), 404
+    
+    return jsonify({
+        "sensor": sensor_name,
+        "count": len(result[sensor_name]),
+        "data": result[sensor_name]
+    })
+
+
 # ---------------------------------------------------
 # RUN SERVER
 # ---------------------------------------------------
 if __name__ == "__main__":
-    app.run(port=5001, debug=True)
+    app.run(port=SERVER_PORT, debug=True)
