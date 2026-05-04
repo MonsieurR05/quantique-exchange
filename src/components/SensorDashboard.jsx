@@ -1,3 +1,17 @@
+/**
+ * SensorDashboard
+ *
+ * This component:
+ * - Fetches live IoT sensor data from the backend
+ * - Preprocesses raw sensor data into financial-style time series
+ * - Applies trading strategies to generate signals
+ * - Displays charts, signals, and trading controls
+ *
+ * Sprint 2 Upgrade:
+ * - Introduces trading interaction (BUY / SELL)
+ * - Tracks user positions per sensor
+ */
+
 import React, { useEffect, useState } from "react";
 import {
   LineChart,
@@ -18,11 +32,30 @@ import { getSignalColor } from "../utils/signalStyles";
 // MAIN COMPONENT
 // -----------------------------
 export default function SensorDashboard() {
+  /**
+   * Stores processed sensor data keyed by sensor name
+   */
   const [sensorData, setSensorData] = useState({});
+
+  /**
+   * Loading and error states for API handling
+   */
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  /**
+   * Stores user trading positions per sensor
+   * Example:
+   * { DoorSensor302: "BUY", MotionSensor: "SELL" }
+   */
   const [positions, setPositions] = useState({});
 
+  /**
+   * Updates position when user clicks BUY or SELL
+   *
+   * @param {string} sensor - Sensor name
+   * @param {string} action - "BUY" or "SELL"
+   */
   const handleTrade = (sensor, action) => {
     setPositions((prev) => ({
       ...prev,
@@ -30,12 +63,18 @@ export default function SensorDashboard() {
     }));
   };
 
+  /**
+   * Strategy instances used to generate signals
+   */
   const strategies = [
     new MomentumStrategy(),
     new MovingAverageStrategy(10),
     new OrderFlowImbalanceStrategy(10),
   ];
 
+  /**
+   * Fetch sensor data every 5 seconds
+   */
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -98,6 +137,9 @@ export default function SensorDashboard() {
       )}
 
       {Object.entries(sensorData).map(([sensorName, data]) => {
+        /**
+         * Generate signals from all strategies
+         */
         const signals = strategies.map((strategy) => ({
           name: strategy.name,
           signal: strategy.generateSignal(data),
@@ -161,13 +203,59 @@ export default function SensorDashboard() {
                 </div>
               ))}
 
-              {/* NEW: POSITION DISPLAY */}
+              {/* POSITION DISPLAY */}
               <div>
                 <div>Position</div>
-                <strong>
+                <strong
+                  style={{
+                    color:
+                      positions[sensorName] === "BUY"
+                        ? "#00ff9f"
+                        : positions[sensorName] === "SELL"
+                        ? "#ff4d4d"
+                        : "#aaa",
+                  }}
+                >
                   {positions[sensorName] || "NONE"}
                 </strong>
               </div>
+            </div>
+
+            {/* TRADING CONTROLS */}
+            <div
+              style={{
+                display: "flex",
+                gap: "10px",
+                marginBottom: "10px",
+              }}
+            >
+              <button
+                onClick={() => handleTrade(sensorName, "BUY")}
+                style={{
+                  background: "#00ff9f",
+                  color: "black",
+                  border: "none",
+                  padding: "6px 12px",
+                  cursor: "pointer",
+                  fontWeight: "bold",
+                }}
+              >
+                BUY
+              </button>
+
+              <button
+                onClick={() => handleTrade(sensorName, "SELL")}
+                style={{
+                  background: "#ff4d4d",
+                  color: "white",
+                  border: "none",
+                  padding: "6px 12px",
+                  cursor: "pointer",
+                  fontWeight: "bold",
+                }}
+              >
+                SELL
+              </button>
             </div>
 
             {/* CHART */}
