@@ -21,6 +21,14 @@ export default function SensorDashboard() {
   const [sensorData, setSensorData] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [positions, setPositions] = useState({});
+
+  const handleTrade = (sensor, action) => {
+    setPositions((prev) => ({
+      ...prev,
+      [sensor]: action,
+    }));
+  };
 
   const strategies = [
     new MomentumStrategy(),
@@ -83,22 +91,10 @@ export default function SensorDashboard() {
         and applies trading strategies to generate BUY, SELL, or HOLD signals.
       </p>
 
-      {loading && (
-        <p style={{ color: "#aaa" }}>
-          Loading live UAL sensor data...
-        </p>
-      )}
-
-      {error && (
-        <p style={{ color: "#ff4d4d" }}>
-          {error}
-        </p>
-      )}
-
+      {loading && <p style={{ color: "#aaa" }}>Loading live UAL sensor data...</p>}
+      {error && <p style={{ color: "#ff4d4d" }}>{error}</p>}
       {!loading && !error && Object.keys(sensorData).length === 0 && (
-        <p style={{ color: "#aaa" }}>
-          No sensor data is currently available.
-        </p>
+        <p style={{ color: "#aaa" }}>No sensor data is currently available.</p>
       )}
 
       {Object.entries(sensorData).map(([sensorName, data]) => {
@@ -164,6 +160,14 @@ export default function SensorDashboard() {
                   </strong>
                 </div>
               ))}
+
+              {/* NEW: POSITION DISPLAY */}
+              <div>
+                <div>Position</div>
+                <strong>
+                  {positions[sensorName] || "NONE"}
+                </strong>
+              </div>
             </div>
 
             {/* CHART */}
