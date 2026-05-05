@@ -1,15 +1,16 @@
 /**
  * SensorDashboard
  *
- * This component:
- * - Fetches live IoT sensor data from the backend
- * - Preprocesses raw sensor data into financial-style time series
- * - Applies trading strategies to generate signals
- * - Displays charts, signals, and trading controls
+ * Responsibilities:
+ * - Fetch and preprocess IoT sensor data
+ * - Apply multiple trading strategies
+ * - Display signals, chart, and trading controls
+ * - Provide user interaction (BUY / SELL)
  *
- * Sprint 2 Upgrade:
- * - Introduces trading interaction (BUY / SELL)
- * - Tracks user positions per sensor
+ * Sprint 2 Enhancements:
+ * - Task 1: Trading state (positions)
+ * - Task 2: Interactive trading controls
+ * - Task 3: Intelligent suggested action (Momentum-based)
  */
 
 import React, { useEffect, useState } from "react";
@@ -28,33 +29,22 @@ import OrderFlowImbalanceStrategy from "../strategies/OrderFlowImbalanceStrategy
 import { preprocessData } from "../utils/sensorProcessing";
 import { getSignalColor } from "../utils/signalStyles";
 
-// -----------------------------
-// MAIN COMPONENT
-// -----------------------------
 export default function SensorDashboard() {
-  /**
-   * Stores processed sensor data keyed by sensor name
-   */
+  /** Processed sensor data */
   const [sensorData, setSensorData] = useState({});
 
-  /**
-   * Loading and error states for API handling
-   */
+  /** UI states */
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  /**
-   * Stores user trading positions per sensor
-   * Example:
-   * { DoorSensor302: "BUY", MotionSensor: "SELL" }
-   */
+  /** Trading positions per sensor */
   const [positions, setPositions] = useState({});
 
   /**
-   * Updates position when user clicks BUY or SELL
+   * Handles BUY / SELL actions
    *
-   * @param {string} sensor - Sensor name
-   * @param {string} action - "BUY" or "SELL"
+   * @param {string} sensor
+   * @param {string} action
    */
   const handleTrade = (sensor, action) => {
     setPositions((prev) => ({
@@ -63,9 +53,7 @@ export default function SensorDashboard() {
     }));
   };
 
-  /**
-   * Strategy instances used to generate signals
-   */
+  /** Strategy instances */
   const strategies = [
     new MomentumStrategy(),
     new MovingAverageStrategy(10),
@@ -73,23 +61,19 @@ export default function SensorDashboard() {
   ];
 
   /**
-   * Fetch sensor data every 5 seconds
+   * Fetch data every 5 seconds
    */
   useEffect(() => {
     const fetchData = async () => {
       try {
         const res = await fetch("http://localhost:5001/data");
-
-        if (!res.ok) {
-          throw new Error("Backend returned an error");
-        }
+        if (!res.ok) throw new Error("Backend returned an error");
 
         const json = await res.json();
         const updated = {};
 
         Object.entries(json).forEach(([sensorName, raw]) => {
           const processed = preprocessData(raw);
-
           if (processed.length > 0) {
             updated[sensorName] = processed;
           }
@@ -99,7 +83,7 @@ export default function SensorDashboard() {
         setError(null);
       } catch (err) {
         console.error("Fetch failed:", err);
-        setError("Could not load live sensor data. Please check the backend server.");
+        setError("Could not load live sensor data.");
       } finally {
         setLoading(false);
       }
@@ -107,137 +91,73 @@ export default function SensorDashboard() {
 
     fetchData();
     const interval = setInterval(fetchData, 5000);
-
     return () => clearInterval(interval);
   }, []);
 
   return (
     <div style={{ background: "#0a0a0a", padding: "20px", color: "white" }}>
-      <h2 style={{ marginBottom: "10px" }}>
-        Quantique Exchange Dashboard
-      </h2>
+      <h2>Quantique Exchange Dashboard</h2>
 
-      <p
-        style={{
-          color: "#aaa",
-          maxWidth: "850px",
-          lineHeight: "1.5",
-          marginBottom: "25px",
-        }}
-      >
-        Live UAL IoT sensor readings are converted into financial-style assets.
-        Each card shows the latest sensor value as a price, calculates movement as a return,
-        and applies trading strategies to generate BUY, SELL, or HOLD signals.
-      </p>
-
-      {loading && <p style={{ color: "#aaa" }}>Loading live UAL sensor data...</p>}
-      {error && <p style={{ color: "#ff4d4d" }}>{error}</p>}
-      {!loading && !error && Object.keys(sensorData).length === 0 && (
-        <p style={{ color: "#aaa" }}>No sensor data is currently available.</p>
-      )}
+      {loading && <p>Loading...</p>}
+      {error && <p style={{ color: "red" }}>{error}</p>}
 
       {Object.entries(sensorData).map(([sensorName, data]) => {
         /**
-         * Generate signals from all strategies
+         * Generate signals for all strategies
          */
         const signals = strategies.map((strategy) => ({
           name: strategy.name,
           signal: strategy.generateSignal(data),
         }));
 
+        /**
+         * Task 3: Suggested action derived from Momentum strategy
+         */
+        const suggestedAction =
+          signals.find((s) => s.name === "Momentum")?.signal || "HOLD";
+
         const latest = data[data.length - 1];
 
         return (
-          <div
-            key={sensorName}
-            style={{
-              marginBottom: "20px",
-              padding: "15px",
-              background: "#111",
-              border: "1px solid #222",
-              borderRadius: "6px",
-            }}
-          >
-            {/* HEADER */}
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                marginBottom: "10px",
-              }}
-            >
-              <h3 style={{ margin: 0 }}>
-                {sensorName} <span style={{ color: "#666" }}>(Asset)</span>
-              </h3>
-
-              <span style={{ color: "#888" }}>
-                Points: {data.length}
-              </span>
-            </div>
+          <div key={sensorName} style={{ marginBottom: "20px" }}>
+            <h3>{sensorName}</h3>
 
             {/* DATA PANEL */}
-            <div
-              style={{
-                display: "flex",
-                gap: "30px",
-                marginBottom: "10px",
-                fontSize: "14px",
-              }}
-            >
-              <div>
-                <div>Price</div>
-                <strong>{latest?.value}</strong>
-              </div>
-
-              <div>
-                <div>Return</div>
-                <strong>{latest?.return.toFixed(2)}</strong>
-              </div>
+            <div style={{ display: "flex", gap: "20px" }}>
+              <div>Price: {latest?.value}</div>
+              <div>Return: {latest?.return.toFixed(2)}</div>
 
               {signals.map(({ name, signal }) => (
                 <div key={name}>
-                  <div>{name}</div>
-                  <strong style={{ color: getSignalColor(signal) }}>
+                  {name}:{" "}
+                  <span style={{ color: getSignalColor(signal) }}>
                     {signal}
-                  </strong>
+                  </span>
                 </div>
               ))}
 
-              {/* POSITION DISPLAY */}
+              {/* Suggested Action */}
               <div>
-                <div>Position</div>
-                <strong
-                  style={{
-                    color:
-                      positions[sensorName] === "BUY"
-                        ? "#00ff9f"
-                        : positions[sensorName] === "SELL"
-                        ? "#ff4d4d"
-                        : "#aaa",
-                  }}
-                >
-                  {positions[sensorName] || "NONE"}
+                Suggested:{" "}
+                <strong style={{ color: getSignalColor(suggestedAction) }}>
+                  {suggestedAction}
                 </strong>
+              </div>
+
+              {/* Position */}
+              <div>
+                Position: {positions[sensorName] || "NONE"}
               </div>
             </div>
 
             {/* TRADING CONTROLS */}
-            <div
-              style={{
-                display: "flex",
-                gap: "10px",
-                marginBottom: "10px",
-              }}
-            >
+            <div style={{ marginTop: "10px" }}>
               <button
                 onClick={() => handleTrade(sensorName, "BUY")}
                 style={{
                   background: "#00ff9f",
-                  color: "black",
-                  border: "none",
-                  padding: "6px 12px",
-                  cursor: "pointer",
-                  fontWeight: "bold",
+                  border:
+                    suggestedAction === "BUY" ? "2px solid white" : "none",
                 }}
               >
                 BUY
@@ -248,10 +168,8 @@ export default function SensorDashboard() {
                 style={{
                   background: "#ff4d4d",
                   color: "white",
-                  border: "none",
-                  padding: "6px 12px",
-                  cursor: "pointer",
-                  fontWeight: "bold",
+                  border:
+                    suggestedAction === "SELL" ? "2px solid white" : "none",
                 }}
               >
                 SELL
@@ -259,17 +177,12 @@ export default function SensorDashboard() {
             </div>
 
             {/* CHART */}
-            <LineChart width={800} height={200} data={data}>
+            <LineChart width={600} height={200} data={data}>
               <CartesianGrid stroke="#222" />
-              <XAxis dataKey="displayTime" stroke="#666" />
-              <YAxis stroke="#666" />
+              <XAxis dataKey="displayTime" />
+              <YAxis />
               <Tooltip />
-              <Line
-                type="monotone"
-                dataKey="value"
-                stroke="#00ff9f"
-                dot={false}
-              />
+              <Line dataKey="value" stroke="#00ff9f" />
             </LineChart>
           </div>
         );
