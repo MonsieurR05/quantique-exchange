@@ -5,6 +5,8 @@
  * which sensor should be shown on the main dashboard chart.
  */
 
+import React from "react";
+
 export default function SensorList({ sensors, selectedSensor, onSelectSensor }) {
   return (
     <aside className="left-panel">

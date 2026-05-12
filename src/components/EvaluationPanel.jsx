@@ -6,6 +6,8 @@
  * the recent sensor-derived signal data has been.
  */
 
+import React from "react";
+
 export default function EvaluationPanel({ accuracy, strength }) {
   return (
     <div className="evaluation-section">

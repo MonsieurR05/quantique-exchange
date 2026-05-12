@@ -2,9 +2,11 @@
  * SensorChart
  *
  * Displays the selected sensor as a live line chart.
- * It also normalises the x-axis labels so the chart appears as a live feed
- * with evenly spaced timestamps.
+ * It uses chartTime.js to normalise the x-axis labels so the chart appears
+ * as a live feed with evenly spaced timestamps.
  */
+
+import React from "react";
 
 import {
   LineChart,
@@ -15,7 +17,7 @@ import {
   CartesianGrid,
 } from "recharts";
 
-const CHART_POINT_INTERVAL_MS = 3000;
+import { addLiveDisplayTimes } from "../utils/chartTime";
 
 export default function SensorChart({
   data,
@@ -25,22 +27,7 @@ export default function SensorChart({
   lastUpdated,
 }) {
   const chartEndTime = lastUpdated || new Date();
-
-  const chartData = data.map((reading, index) => {
-    const pointTime = new Date(
-      chartEndTime.getTime() -
-        (data.length - index - 1) * CHART_POINT_INTERVAL_MS
-    );
-
-    return {
-      ...reading,
-      liveDisplayTime: pointTime.toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-      }),
-    };
-  });
+  const chartData = addLiveDisplayTimes(data, chartEndTime, refreshIntervalMs);
 
   return (
     <section className="center-panel">
@@ -65,11 +52,7 @@ export default function SensorChart({
       <div className="chart-card">
         <LineChart width={750} height={320} data={chartData}>
           <CartesianGrid stroke="#222" />
-          <XAxis
-            dataKey="liveDisplayTime"
-            stroke="#888"
-            minTickGap={35}
-          />
+          <XAxis dataKey="liveDisplayTime" stroke="#888" minTickGap={35} />
           <YAxis stroke="#888" />
           <Tooltip />
           <Line

@@ -6,6 +6,8 @@
  * and simple evaluation metrics.
  */
 
+import React from "react";
+
 import { getSignalColor } from "../utils/signalStyles";
 
 export default function TradingPanel({

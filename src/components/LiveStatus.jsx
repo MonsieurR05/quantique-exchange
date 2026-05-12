@@ -6,6 +6,8 @@
  * have completed during the session.
  */
 
+import React from "react";
+
 export default function LiveStatus({ refreshing, lastUpdated, refreshCount }) {
   return (
     <div className="live-status-card">
