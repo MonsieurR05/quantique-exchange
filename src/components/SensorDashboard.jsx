@@ -1,6 +1,9 @@
 /**
- * SensorDashboard (Final Polished Version)
+ * SensorDashboard
  *
+ * Main dashboard component for displaying live UAL IoT sensor data as
+ * trading-style assets. It fetches backend data, applies reusable trading
+ * strategies, and allows users to simulate BUY/SELL positions.
  */
 
 import React, { useEffect, useState } from "react";
@@ -18,6 +21,7 @@ import MovingAverageStrategy from "../strategies/MovingAverageStrategy";
 import OrderFlowImbalanceStrategy from "../strategies/OrderFlowImbalanceStrategy";
 import { preprocessData } from "../utils/sensorProcessing";
 import { getSignalColor } from "../utils/signalStyles";
+import "../styles/SensorDashboard.css";
 
 export default function SensorDashboard() {
   const [sensorData, setSensorData] = useState({});
@@ -28,6 +32,8 @@ export default function SensorDashboard() {
   const [positions, setPositions] = useState({});
 
   const handleTrade = (sensor, action) => {
+    if (!sensor) return;
+
     setPositions((prev) => ({
       ...prev,
       [sensor]: action,
@@ -51,6 +57,7 @@ export default function SensorDashboard() {
 
         Object.entries(json).forEach(([sensorName, raw]) => {
           const processed = preprocessData(raw);
+
           if (processed.length > 0) {
             updated[sensorName] = processed;
           }
@@ -58,9 +65,13 @@ export default function SensorDashboard() {
 
         setSensorData(updated);
 
-        if (!selectedSensor && Object.keys(updated).length > 0) {
-          setSelectedSensor(Object.keys(updated)[0]);
-        }
+        setSelectedSensor((currentSensor) => {
+          if (currentSensor && updated[currentSensor]) {
+            return currentSensor;
+          }
+
+          return Object.keys(updated)[0] || null;
+        });
 
         setError(null);
       } catch (err) {
@@ -71,9 +82,11 @@ export default function SensorDashboard() {
     };
 
     fetchData();
+
     const interval = setInterval(fetchData, 5000);
+
     return () => clearInterval(interval);
-  }, [selectedSensor]);
+  }, []);
 
   const data = sensorData[selectedSensor] || [];
 
@@ -83,12 +96,12 @@ export default function SensorDashboard() {
   }));
 
   const suggested =
-    signals.find((s) => s.name === "Momentum")?.signal || "HOLD";
+    signals.find((signal) => signal.name === "Momentum")?.signal || "HOLD";
 
   const latest = data[data.length - 1];
 
-  const positive = data.filter((d) => d.return > 0).length;
-  const negative = data.filter((d) => d.return < 0).length;
+  const positive = data.filter((reading) => reading.return > 0).length;
+  const negative = data.filter((reading) => reading.return < 0).length;
 
   const accuracy =
     positive + negative > 0
@@ -98,164 +111,154 @@ export default function SensorDashboard() {
   const strength =
     data.length > 0
       ? (
-          data.reduce((sum, d) => sum + Math.abs(d.return), 0) /
+          data.reduce((sum, reading) => sum + Math.abs(reading.return), 0) /
           data.length
         ).toFixed(2)
       : "0";
 
   return (
-    <div style={{ background: "#0a0a0a", color: "white", height: "100vh" }}>
-      <h2 style={{ padding: "15px 20px", fontWeight: "600" }}>
-        Quantique Exchange
-      </h2>
-
-      {loading && <p style={{ padding: "10px" }}>Loading...</p>}
-      {error && <p style={{ color: "#ff4d4d", padding: "10px" }}>{error}</p>}
-
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "240px 1fr 320px",
-          height: "90%",
-        }}
-      >
-        {/* LEFT PANEL */}
-        <div style={{ borderRight: "1px solid #222", padding: "15px" }}>
-          <h4 style={{ marginBottom: "10px", color: "#aaa" }}>SENSORS</h4>
-
-          {Object.keys(sensorData).map((sensor) => (
-            <div
-              key={sensor}
-              onClick={() => setSelectedSensor(sensor)}
-              style={{
-                padding: "10px",
-                marginBottom: "6px",
-                cursor: "pointer",
-                background:
-                  selectedSensor === sensor ? "#1f1f1f" : "transparent",
-                borderRadius: "6px",
-                transition: "0.2s",
-              }}
-            >
-              {sensor}
-            </div>
-          ))}
+    <div className="sensor-dashboard">
+      <header className="dashboard-header">
+        <div>
+          <h2 className="dashboard-title">Quantique Exchange</h2>
+          <p className="dashboard-subtitle">
+            Live UAL sensor data transformed into simulated trading signals.
+          </p>
         </div>
+      </header>
+
+      {loading && <p className="dashboard-message">Loading sensor data...</p>}
+
+      {error && <p className="dashboard-message dashboard-error">{error}</p>}
+
+      <main className="dashboard-layout">
+        {/* LEFT PANEL */}
+        <aside className="left-panel">
+          <h4 className="panel-heading">SENSORS</h4>
+
+          <div className="sensor-list">
+            {Object.keys(sensorData).map((sensor) => (
+              <button
+                key={sensor}
+                onClick={() => setSelectedSensor(sensor)}
+                className={`sensor-item ${
+                  selectedSensor === sensor ? "active" : ""
+                }`}
+              >
+                {sensor}
+              </button>
+            ))}
+          </div>
+        </aside>
 
         {/* CENTER PANEL */}
-        <div style={{ padding: "20px" }}>
-          <h3 style={{ marginBottom: "15px" }}>{selectedSensor}</h3>
-
-          <LineChart width={750} height={320} data={data}>
-            <CartesianGrid stroke="#222" />
-            <XAxis dataKey="displayTime" stroke="#888" />
-            <YAxis stroke="#888" />
-            <Tooltip />
-            <Line
-              type="monotone"
-              dataKey="value"
-              stroke="#00ff9f"
-              strokeWidth={2}
-              dot={false}
-            />
-          </LineChart>
-        </div>
-
-        {/* RIGHT PANEL */}
-        <div style={{ borderLeft: "1px solid #222", padding: "20px" }}>
-          <h4 style={{ marginBottom: "10px", color: "#aaa" }}>
-            TRADING PANEL
-          </h4>
-
-          <div style={{ marginBottom: "15px" }}>
-            <div>Price: {latest?.value}</div>
-            <div>Return: {latest?.return?.toFixed(2)}</div>
+        <section className="center-panel">
+          <div className="chart-header">
+            <div>
+              <h3 className="chart-title">{selectedSensor || "No sensor selected"}</h3>
+              <p className="chart-caption">
+                Chart updates from live backend sensor readings.
+              </p>
+            </div>
           </div>
 
-          {/* SIGNALS */}
-          <div style={{ marginBottom: "15px" }}>
+          <div className="chart-card">
+            <LineChart width={750} height={320} data={data}>
+              <CartesianGrid stroke="#222" />
+              <XAxis dataKey="displayTime" stroke="#888" />
+              <YAxis stroke="#888" />
+              <Tooltip />
+              <Line
+                type="monotone"
+                dataKey="value"
+                stroke="#00ff9f"
+                strokeWidth={2}
+                dot={false}
+              />
+            </LineChart>
+          </div>
+        </section>
+
+        {/* RIGHT PANEL */}
+        <aside className="right-panel">
+          <h4 className="panel-heading">TRADING PANEL</h4>
+
+          <div className="metric-card">
+            <div className="metric-row">
+              <span>Price</span>
+              <strong>{latest?.value ?? "-"}</strong>
+            </div>
+
+            <div className="metric-row">
+              <span>Return</span>
+              <strong>{latest?.return?.toFixed(2) ?? "-"}</strong>
+            </div>
+          </div>
+
+          <div className="signal-list">
             {signals.map(({ name, signal }) => (
-              <div key={name} style={{ marginBottom: "4px" }}>
-                {name}:{" "}
-                <span style={{ color: getSignalColor(signal) }}>
+              <div key={name} className="signal-row">
+                <span>{name}</span>
+                <strong style={{ color: getSignalColor(signal) }}>
                   {signal}
-                </span>
+                </strong>
               </div>
             ))}
           </div>
 
-          {/* SUGGESTED */}
-          <div
-            style={{
-              marginBottom: "15px",
-              padding: "10px",
-              border: "1px solid #333",
-              borderRadius: "6px",
-            }}
-          >
-            <strong>Suggested: </strong>
-            <span style={{ color: getSignalColor(suggested) }}>
+          <div className="suggested-card">
+            <span>Suggested action</span>
+            <strong style={{ color: getSignalColor(suggested) }}>
               {suggested}
-            </span>
+            </strong>
           </div>
 
-          {/* POSITION */}
-          <div style={{ marginBottom: "15px" }}>
-            <strong>Position: </strong>
-            {positions[selectedSensor] || "NONE"}
+          <div className="position-row">
+            <span>Current position</span>
+            <strong>{positions[selectedSensor] || "NONE"}</strong>
           </div>
 
-          {/* BUTTONS */}
-          <div style={{ display: "flex", gap: "10px", marginBottom: "20px" }}>
+          <div className="trade-buttons">
             <button
               onClick={() => handleTrade(selectedSensor, "BUY")}
-              style={{
-                flex: 1,
-                background: "#00ff9f",
-                border: suggested === "BUY" ? "2px solid white" : "none",
-                padding: "10px",
-                fontWeight: "bold",
-                cursor: "pointer",
-              }}
+              className={`trade-button buy ${
+                suggested === "BUY" ? "recommended" : ""
+              }`}
             >
               BUY
             </button>
 
             <button
               onClick={() => handleTrade(selectedSensor, "SELL")}
-              style={{
-                flex: 1,
-                background: "#ff4d4d",
-                color: "white",
-                border: suggested === "SELL" ? "2px solid white" : "none",
-                padding: "10px",
-                fontWeight: "bold",
-                cursor: "pointer",
-              }}
+              className={`trade-button sell ${
+                suggested === "SELL" ? "recommended" : ""
+              }`}
             >
               SELL
             </button>
           </div>
 
-          {/* EVALUATION */}
-          <div>
-            <h4 style={{ marginBottom: "8px", color: "#aaa" }}>EVALUATION</h4>
+          <div className="evaluation-section">
+            <h4 className="panel-heading">EVALUATION</h4>
 
-            <div>
-              Accuracy:{" "}
-              <span
-                style={{
-                  color: accuracy > 60 ? "#00ff9f" : "#ff4d4d",
-                }}
+            <div className="metric-row">
+              <span>Accuracy</span>
+              <strong
+                className={
+                  Number(accuracy) > 60 ? "positive-text" : "negative-text"
+                }
               >
                 {accuracy}%
-              </span>
+              </strong>
             </div>
 
-            <div>Signal Strength: {strength}</div>
+            <div className="metric-row">
+              <span>Signal Strength</span>
+              <strong>{strength}</strong>
+            </div>
           </div>
-        </div>
-      </div>
+        </aside>
+      </main>
     </div>
   );
 }
