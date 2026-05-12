@@ -1,27 +1,28 @@
 /**
  * SensorDashboard
  *
- * Main dashboard component for displaying live UAL IoT sensor data as
- * trading-style assets. It fetches backend data, applies reusable trading
- * strategies, and allows users to simulate BUY/SELL positions.
+ * Container component for the Quantique Exchange dashboard.
+ * It handles data fetching, selected sensor state, simulated positions,
+ * live refresh feedback, and passes data into smaller UI components.
  */
 
 import React, { useEffect, useState } from "react";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip,
-  CartesianGrid,
-} from "recharts";
 
 import MomentumStrategy from "../strategies/MomentumStrategy";
 import MovingAverageStrategy from "../strategies/MovingAverageStrategy";
 import OrderFlowImbalanceStrategy from "../strategies/OrderFlowImbalanceStrategy";
 import { preprocessData } from "../utils/sensorProcessing";
-import { getSignalColor } from "../utils/signalStyles";
+
+import SensorList from "./SensorList";
+import SensorChart from "./SensorChart";
+import LiveStatus from "./LiveStatus";
+import TradingPanel from "./TradingPanel";
+
 import "../styles/SensorDashboard.css";
+
+const API_URL = "http://localhost:5001/data";
+const REFRESH_INTERVAL_MS = 3000;
+const STRATEGY_WINDOW = 10;
 
 export default function SensorDashboard() {
   const [sensorData, setSensorData] = useState({});
@@ -30,6 +31,16 @@ export default function SensorDashboard() {
 
   const [selectedSensor, setSelectedSensor] = useState(null);
   const [positions, setPositions] = useState({});
+
+  const [lastUpdated, setLastUpdated] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshCount, setRefreshCount] = useState(0);
+
+  const strategies = [
+    new MomentumStrategy(),
+    new MovingAverageStrategy(STRATEGY_WINDOW),
+    new OrderFlowImbalanceStrategy(STRATEGY_WINDOW),
+  ];
 
   const handleTrade = (sensor, action) => {
     if (!sensor) return;
@@ -40,16 +51,12 @@ export default function SensorDashboard() {
     }));
   };
 
-  const strategies = [
-    new MomentumStrategy(),
-    new MovingAverageStrategy(10),
-    new OrderFlowImbalanceStrategy(10),
-  ];
-
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch("http://localhost:5001/data");
+        setRefreshing(true);
+
+        const res = await fetch(API_URL);
         if (!res.ok) throw new Error("Backend error");
 
         const json = await res.json();
@@ -73,17 +80,20 @@ export default function SensorDashboard() {
           return Object.keys(updated)[0] || null;
         });
 
+        setLastUpdated(new Date());
+        setRefreshCount((count) => count + 1);
         setError(null);
       } catch (err) {
         setError("Failed to load sensor data");
       } finally {
         setLoading(false);
+        setRefreshing(false);
       }
     };
 
     fetchData();
 
-    const interval = setInterval(fetchData, 5000);
+    const interval = setInterval(fetchData, REFRESH_INTERVAL_MS);
 
     return () => clearInterval(interval);
   }, []);
@@ -125,6 +135,12 @@ export default function SensorDashboard() {
             Live UAL sensor data transformed into simulated trading signals.
           </p>
         </div>
+
+        <LiveStatus
+          refreshing={refreshing}
+          lastUpdated={lastUpdated}
+          refreshCount={refreshCount}
+        />
       </header>
 
       {loading && <p className="dashboard-message">Loading sensor data...</p>}
@@ -132,132 +148,30 @@ export default function SensorDashboard() {
       {error && <p className="dashboard-message dashboard-error">{error}</p>}
 
       <main className="dashboard-layout">
-        {/* LEFT PANEL */}
-        <aside className="left-panel">
-          <h4 className="panel-heading">SENSORS</h4>
+        <SensorList
+          sensors={Object.keys(sensorData)}
+          selectedSensor={selectedSensor}
+          onSelectSensor={setSelectedSensor}
+        />
 
-          <div className="sensor-list">
-            {Object.keys(sensorData).map((sensor) => (
-              <button
-                key={sensor}
-                onClick={() => setSelectedSensor(sensor)}
-                className={`sensor-item ${
-                  selectedSensor === sensor ? "active" : ""
-                }`}
-              >
-                {sensor}
-              </button>
-            ))}
-          </div>
-        </aside>
+        <SensorChart
+          data={data}
+          selectedSensor={selectedSensor}
+          refreshing={refreshing}
+          refreshIntervalMs={REFRESH_INTERVAL_MS}
+          lastUpdated={lastUpdated}
+        />
 
-        {/* CENTER PANEL */}
-        <section className="center-panel">
-          <div className="chart-header">
-            <div>
-              <h3 className="chart-title">{selectedSensor || "No sensor selected"}</h3>
-              <p className="chart-caption">
-                Chart updates from live backend sensor readings.
-              </p>
-            </div>
-          </div>
-
-          <div className="chart-card">
-            <LineChart width={750} height={320} data={data}>
-              <CartesianGrid stroke="#222" />
-              <XAxis dataKey="displayTime" stroke="#888" />
-              <YAxis stroke="#888" />
-              <Tooltip />
-              <Line
-                type="monotone"
-                dataKey="value"
-                stroke="#00ff9f"
-                strokeWidth={2}
-                dot={false}
-              />
-            </LineChart>
-          </div>
-        </section>
-
-        {/* RIGHT PANEL */}
-        <aside className="right-panel">
-          <h4 className="panel-heading">TRADING PANEL</h4>
-
-          <div className="metric-card">
-            <div className="metric-row">
-              <span>Price</span>
-              <strong>{latest?.value ?? "-"}</strong>
-            </div>
-
-            <div className="metric-row">
-              <span>Return</span>
-              <strong>{latest?.return?.toFixed(2) ?? "-"}</strong>
-            </div>
-          </div>
-
-          <div className="signal-list">
-            {signals.map(({ name, signal }) => (
-              <div key={name} className="signal-row">
-                <span>{name}</span>
-                <strong style={{ color: getSignalColor(signal) }}>
-                  {signal}
-                </strong>
-              </div>
-            ))}
-          </div>
-
-          <div className="suggested-card">
-            <span>Suggested action</span>
-            <strong style={{ color: getSignalColor(suggested) }}>
-              {suggested}
-            </strong>
-          </div>
-
-          <div className="position-row">
-            <span>Current position</span>
-            <strong>{positions[selectedSensor] || "NONE"}</strong>
-          </div>
-
-          <div className="trade-buttons">
-            <button
-              onClick={() => handleTrade(selectedSensor, "BUY")}
-              className={`trade-button buy ${
-                suggested === "BUY" ? "recommended" : ""
-              }`}
-            >
-              BUY
-            </button>
-
-            <button
-              onClick={() => handleTrade(selectedSensor, "SELL")}
-              className={`trade-button sell ${
-                suggested === "SELL" ? "recommended" : ""
-              }`}
-            >
-              SELL
-            </button>
-          </div>
-
-          <div className="evaluation-section">
-            <h4 className="panel-heading">EVALUATION</h4>
-
-            <div className="metric-row">
-              <span>Accuracy</span>
-              <strong
-                className={
-                  Number(accuracy) > 60 ? "positive-text" : "negative-text"
-                }
-              >
-                {accuracy}%
-              </strong>
-            </div>
-
-            <div className="metric-row">
-              <span>Signal Strength</span>
-              <strong>{strength}</strong>
-            </div>
-          </div>
-        </aside>
+        <TradingPanel
+          latest={latest}
+          signals={signals}
+          suggested={suggested}
+          selectedSensor={selectedSensor}
+          position={positions[selectedSensor]}
+          onTrade={handleTrade}
+          accuracy={accuracy}
+          strength={strength}
+        />
       </main>
     </div>
   );

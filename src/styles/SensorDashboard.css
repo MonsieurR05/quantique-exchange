@@ -5,6 +5,10 @@
   font-family: Arial, sans-serif;
 }
 
+/* -----------------------------
+   HEADER
+----------------------------- */
+
 .dashboard-header {
   height: 78px;
   padding: 16px 22px;
@@ -36,26 +40,64 @@
   color: #ff4d4d;
 }
 
+/* -----------------------------
+   LIVE STATUS
+----------------------------- */
+
+.live-status-card {
+  min-width: 190px;
+  padding: 9px 12px;
+  border: 1px solid #252525;
+  border-radius: 10px;
+  background: #101010;
+  text-align: right;
+}
+
+.live-status {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 7px;
+  color: #00ff9f;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.live-status.updating {
+  color: #f6c76b;
+}
+
+.live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 10px currentColor;
+}
+
+.last-updated {
+  margin-top: 4px;
+  color: #858585;
+  font-size: 12px;
+}
+
+/* -----------------------------
+   MAIN LAYOUT
+----------------------------- */
+
 .dashboard-layout {
   display: grid;
   grid-template-columns: 240px minmax(0, 1fr) 320px;
   height: calc(100vh - 78px);
 }
 
+/* -----------------------------
+   LEFT SENSOR PANEL
+----------------------------- */
+
 .left-panel {
   border-right: 1px solid #202020;
   padding: 18px 14px;
-  overflow-y: auto;
-}
-
-.center-panel {
-  padding: 22px;
-  overflow-y: auto;
-}
-
-.right-panel {
-  border-left: 1px solid #202020;
-  padding: 20px;
   overflow-y: auto;
 }
 
@@ -96,10 +138,26 @@
   color: #ffffff;
 }
 
+.empty-state {
+  color: #777;
+  font-size: 13px;
+  margin: 8px 0;
+}
+
+/* -----------------------------
+   CENTER CHART PANEL
+----------------------------- */
+
+.center-panel {
+  padding: 22px;
+  overflow-y: auto;
+}
+
 .chart-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
+  gap: 16px;
   margin-bottom: 16px;
 }
 
@@ -113,6 +171,17 @@
   margin: 6px 0 0;
   color: #858585;
   font-size: 13px;
+  line-height: 1.4;
+}
+
+.chart-update-badge {
+  padding: 7px 10px;
+  border: 1px solid #252525;
+  border-radius: 999px;
+  background: #101010;
+  color: #9c9c9c;
+  font-size: 12px;
+  white-space: nowrap;
 }
 
 .chart-card {
@@ -121,6 +190,16 @@
   border-radius: 12px;
   padding: 18px;
   overflow-x: auto;
+}
+
+/* -----------------------------
+   RIGHT TRADING PANEL
+----------------------------- */
+
+.right-panel {
+  border-left: 1px solid #202020;
+  padding: 20px;
+  overflow-y: auto;
 }
 
 .metric-card {
@@ -199,6 +278,10 @@
   color: #aaa;
 }
 
+/* -----------------------------
+   TRADE BUTTONS
+----------------------------- */
+
 .trade-buttons {
   display: flex;
   gap: 10px;
@@ -212,11 +295,16 @@
   font-weight: 700;
   cursor: pointer;
   border-radius: 8px;
-  transition: transform 0.15s ease, border-color 0.15s ease;
+  transition: transform 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
 }
 
 .trade-button:hover {
   transform: translateY(-1px);
+}
+
+.trade-button:active {
+  transform: translateY(0);
+  opacity: 0.85;
 }
 
 .trade-button.buy {
@@ -233,6 +321,10 @@
   border-color: #ffffff;
 }
 
+/* -----------------------------
+   EVALUATION PANEL
+----------------------------- */
+
 .evaluation-section {
   padding-top: 4px;
 }
@@ -243,4 +335,53 @@
 
 .negative-text {
   color: #ff4d4d;
+}
+
+/* -----------------------------
+   RESPONSIVE
+----------------------------- */
+
+@media (max-width: 1100px) {
+  .dashboard-layout {
+    grid-template-columns: 220px 1fr;
+  }
+
+  .right-panel {
+    grid-column: 1 / -1;
+    border-left: none;
+    border-top: 1px solid #202020;
+  }
+}
+
+@media (max-width: 760px) {
+  .dashboard-header {
+    height: auto;
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .live-status-card {
+    width: 100%;
+    text-align: left;
+  }
+
+  .live-status {
+    justify-content: flex-start;
+  }
+
+  .dashboard-layout {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .left-panel,
+  .right-panel {
+    border: none;
+    border-top: 1px solid #202020;
+  }
+
+  .chart-header {
+    flex-direction: column;
+  }
 }
