@@ -87,7 +87,7 @@
 
 .dashboard-layout {
   display: grid;
-  grid-template-columns: 240px minmax(0, 1fr) 320px;
+  grid-template-columns: 240px minmax(0, 1fr) 420px;
   height: calc(100vh - 78px);
 }
 

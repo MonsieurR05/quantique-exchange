@@ -2,8 +2,18 @@
  * SensorDashboard
  *
  * Container component for the Quantique Exchange dashboard.
- * It handles data fetching, selected sensor state, simulated positions,
- * live refresh feedback, and passes data into smaller UI components.
+ * It handles:
+ * - Live sensor fetching
+ * - Simulated stock price generation
+ * - Trading strategy execution
+ * - Portfolio simulation
+ * - Live refresh tracking
+ * - Asset selection state
+ *
+ * Design Notes:
+ * - Uses Strategy Pattern for modular trading logic
+ * - Preserves backend sensor structure
+ * - Converts IoT data into financial-style assets
  */
 
 import React, { useEffect, useState } from "react";
@@ -25,9 +35,22 @@ const REFRESH_INTERVAL_MS = 1000;
 const STRATEGY_WINDOW = 10;
 
 /**
+ * Maps backend sensor IDs to recognisable stock/company names.
+ * Backend structure remains unchanged.
+ */
+const assetNames = {
+  DoorSensor302: "BP",
+  MotionSensorEntrance: "Nike",
+  MotionSensorTechOffice: "Shell",
+  MoistureSensorKitchen: "Apple",
+  MoistureSensorMick: "Tesla",
+  MoistureSensorLizzie: "Amazon",
+  MotionSensor308: "Microsoft",
+  WaterSensor301: "Adidas",
+};
+
+/**
  * Checks whether a processed sensor only returns binary values.
- * Binary sensors such as door/contact sensors usually produce 0/1 values,
- * which can make the chart look static or visually unclear for users.
  */
 function isBinarySensor(readings) {
   if (!readings || readings.length === 0) return true;
@@ -46,8 +69,6 @@ function isBinarySensor(readings) {
 
 /**
  * Chooses a clearer default sensor for the main chart.
- * Non-binary sensors are prioritised so the first chart shown has smoother
- * visual movement and feels more live to beginner users.
  */
 function chooseDefaultSensor(updatedSensors) {
   const sensorEntries = Object.entries(updatedSensors);
@@ -73,46 +94,132 @@ function chooseDefaultSensor(updatedSensors) {
     null
   );
 }
+
 export default function SensorDashboard() {
+  /**
+   * Stores processed market asset data.
+   */
   const [sensorData, setSensorData] = useState({});
+
+  /**
+   * Loading and API states.
+   */
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  /**
+   * Selected active asset.
+   */
   const [selectedSensor, setSelectedSensor] = useState(null);
+
+  /**
+   * Stores latest BUY/SELL position.
+   */
   const [positions, setPositions] = useState({});
 
+  /**
+   * Simulated portfolio balance.
+   */
+  const [balance, setBalance] = useState(10000);
+
+  /**
+   * Stores owned shares per asset.
+   */
+  const [portfolio, setPortfolio] = useState({});
+
+  /**
+   * Live refresh state.
+   */
   const [lastUpdated, setLastUpdated] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [refreshCount, setRefreshCount] = useState(0);
 
+  /**
+   * Trading strategy instances.
+   */
   const strategies = [
     new MomentumStrategy(),
     new MovingAverageStrategy(STRATEGY_WINDOW),
     new OrderFlowImbalanceStrategy(STRATEGY_WINDOW),
   ];
 
-  const handleTrade = (sensor, action) => {
-    if (!sensor) return;
+  /**
+   * Executes simulated BUY and SELL actions.
+   */
+  const handleTrade = (sensor, action, price) => {
+    if (!sensor || !price) return;
 
-    setPositions((prev) => ({
-      ...prev,
-      [sensor]: action,
-    }));
+    /**
+     * BUY LOGIC
+     */
+    if (action === "BUY" && balance >= price) {
+      setBalance((prev) => prev - price);
+
+      setPortfolio((prev) => ({
+        ...prev,
+        [sensor]: (prev[sensor] || 0) + 1,
+      }));
+
+      setPositions((prev) => ({
+        ...prev,
+        [sensor]: "BUY",
+      }));
+    }
+
+    /**
+     * SELL LOGIC
+     */
+    if (action === "SELL" && (portfolio[sensor] || 0) > 0) {
+      setBalance((prev) => prev + price);
+
+      setPortfolio((prev) => ({
+        ...prev,
+        [sensor]: prev[sensor] - 1,
+      }));
+
+      setPositions((prev) => ({
+        ...prev,
+        [sensor]: "SELL",
+      }));
+    }
   };
 
+  /**
+   * Fetches live sensor data continuously.
+   * Live refresh system intentionally preserved.
+   */
   useEffect(() => {
     const fetchData = async () => {
       try {
         setRefreshing(true);
 
         const res = await fetch(API_URL);
-        if (!res.ok) throw new Error("Backend error");
+
+        if (!res.ok) {
+          throw new Error("Backend error");
+        }
 
         const json = await res.json();
+
         const updated = {};
 
         Object.entries(json).forEach(([sensorName, raw]) => {
-          const processed = preprocessData(raw);
+          /**
+           * Converts binary sensor values into stock-style prices.
+           * Creates more realistic market movement.
+           */
+          const processed = preprocessData(raw).map((reading, index) => {
+            const simulatedPrice =
+              100 +
+              Number(reading.value) * 31 +
+              Math.sin(index / 2) * 8 +
+              Math.random() * 5;
+
+            return {
+              ...reading,
+              value: Number(simulatedPrice.toFixed(2)),
+            };
+          });
 
           if (processed.length > 0) {
             updated[sensorName] = processed;
@@ -121,10 +228,17 @@ export default function SensorDashboard() {
 
         setSensorData(updated);
 
+        /**
+         * Keeps current selection if still valid.
+         */
         setSelectedSensor((currentSensor) => {
           const currentReadings = updated[currentSensor];
 
-          if (currentSensor && currentReadings && !isBinarySensor(currentReadings)) {
+          if (
+            currentSensor &&
+            currentReadings &&
+            !isBinarySensor(currentReadings)
+          ) {
             return currentSensor;
           }
 
@@ -133,6 +247,7 @@ export default function SensorDashboard() {
 
         setLastUpdated(new Date());
         setRefreshCount((count) => count + 1);
+
         setError(null);
       } catch (err) {
         setError("Failed to load sensor data");
@@ -149,19 +264,35 @@ export default function SensorDashboard() {
     return () => clearInterval(interval);
   }, []);
 
+  /**
+   * Selected asset dataset.
+   */
   const data = sensorData[selectedSensor] || [];
 
+  /**
+   * Generates strategy signals.
+   */
   const signals = strategies.map((strategy) => ({
     name: strategy.name,
     signal: strategy.generateSignal(data),
   }));
 
+  /**
+   * Uses Momentum strategy as primary recommendation.
+   */
   const suggested =
     signals.find((signal) => signal.name === "Momentum")?.signal || "HOLD";
 
+  /**
+   * Latest market reading.
+   */
   const latest = data[data.length - 1];
 
+  /**
+   * Evaluation metrics.
+   */
   const positive = data.filter((reading) => reading.return > 0).length;
+
   const negative = data.filter((reading) => reading.return < 0).length;
 
   const accuracy =
@@ -172,8 +303,10 @@ export default function SensorDashboard() {
   const strength =
     data.length > 0
       ? (
-          data.reduce((sum, reading) => sum + Math.abs(reading.return), 0) /
-          data.length
+          data.reduce(
+            (sum, reading) => sum + Math.abs(reading.return),
+            0
+          ) / data.length
         ).toFixed(2)
       : "0";
 
@@ -181,9 +314,12 @@ export default function SensorDashboard() {
     <div className="sensor-dashboard">
       <header className="dashboard-header">
         <div>
-          <h2 className="dashboard-title">Quantique Exchange</h2>
+          <h2 className="dashboard-title">
+            Quantique Exchange
+          </h2>
+
           <p className="dashboard-subtitle">
-            Live UAL sensor data transformed into simulated trading signals.
+            Live simulated market assets generated from UAL IoT data streams.
           </p>
         </div>
 
@@ -194,20 +330,32 @@ export default function SensorDashboard() {
         />
       </header>
 
-      {loading && <p className="dashboard-message">Loading sensor data...</p>}
+      {loading && (
+        <p className="dashboard-message">
+          Loading market data...
+        </p>
+      )}
 
-      {error && <p className="dashboard-message dashboard-error">{error}</p>}
+      {error && (
+        <p className="dashboard-message dashboard-error">
+          {error}
+        </p>
+      )}
 
       <main className="dashboard-layout">
         <SensorList
           sensors={Object.keys(sensorData)}
           selectedSensor={selectedSensor}
           onSelectSensor={setSelectedSensor}
+          assetNames={assetNames}
         />
 
         <SensorChart
           data={data}
           selectedSensor={selectedSensor}
+          displayName={
+            assetNames[selectedSensor] || selectedSensor
+          }
           refreshing={refreshing}
           refreshIntervalMs={REFRESH_INTERVAL_MS}
           lastUpdated={lastUpdated}
@@ -218,8 +366,19 @@ export default function SensorDashboard() {
           signals={signals}
           suggested={suggested}
           selectedSensor={selectedSensor}
+          displayName={
+            assetNames[selectedSensor] || selectedSensor
+          }
           position={positions[selectedSensor]}
-          onTrade={handleTrade}
+          balance={balance}
+          portfolio={portfolio}
+          onTrade={(action) =>
+            handleTrade(
+              selectedSensor,
+              action,
+              latest?.value
+            )
+          }
           accuracy={accuracy}
           strength={strength}
         />

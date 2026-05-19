@@ -1,9 +1,15 @@
 /**
  * TradingPanel
  *
- * Displays the selected sensor's latest value, strategy signals,
- * suggested action, current simulated position, trade buttons,
- * and simple evaluation metrics.
+ * Displays:
+ * - Current simulated market price
+ * - Strategy signals
+ * - Suggested trading action
+ * - Portfolio balance
+ * - Owned shares
+ * - Current trading position
+ * - BUY and SELL controls
+ * - Evaluation metrics
  */
 
 import React from "react";
@@ -15,19 +21,28 @@ export default function TradingPanel({
   signals,
   suggested,
   selectedSensor,
+  displayName,
   position,
   onTrade,
   accuracy,
   strength,
+  balance,
+  portfolio,
 }) {
   return (
     <aside className="right-panel">
       <h4 className="panel-heading">TRADING PANEL</h4>
 
+      {/* ASSET INFORMATION */}
       <div className="metric-card">
         <div className="metric-row">
-          <span>Price</span>
-          <strong>{latest?.value ?? "-"}</strong>
+          <span>Selected Asset</span>
+          <strong>{displayName || selectedSensor}</strong>
+        </div>
+
+        <div className="metric-row">
+          <span>Market Price</span>
+          <strong>${latest?.value ?? "-"}</strong>
         </div>
 
         <div className="metric-row">
@@ -36,31 +51,53 @@ export default function TradingPanel({
         </div>
       </div>
 
+      {/* PORTFOLIO INFORMATION */}
+      <div className="metric-card">
+        <div className="metric-row">
+          <span>Portfolio Balance</span>
+          <strong>${balance?.toFixed(2) ?? "0.00"}</strong>
+        </div>
+
+        <div className="metric-row">
+          <span>Owned Shares</span>
+          <strong>{portfolio?.[selectedSensor] || 0}</strong>
+        </div>
+      </div>
+
+      {/* STRATEGY SIGNALS */}
       <div className="signal-list">
         {signals.map(({ name, signal }) => (
           <div key={name} className="signal-row">
             <span>{name}</span>
-            <strong style={{ color: getSignalColor(signal) }}>{signal}</strong>
+
+            <strong style={{ color: getSignalColor(signal) }}>
+              {signal}
+            </strong>
           </div>
         ))}
       </div>
 
+      {/* PRIMARY RECOMMENDATION */}
       <div className="suggested-card">
-        <span>Suggested action</span>
+        <span>Suggested Action</span>
+
         <strong style={{ color: getSignalColor(suggested) }}>
           {suggested}
         </strong>
       </div>
 
+      {/* CURRENT POSITION */}
       <div className="position-row">
-        <span>Current position</span>
+        <span>Current Position</span>
+
         <strong>{position || "NONE"}</strong>
       </div>
 
+      {/* TRADING CONTROLS */}
       <div className="trade-buttons">
         <button
           type="button"
-          onClick={() => onTrade(selectedSensor, "BUY")}
+          onClick={() => onTrade("BUY")}
           className={`trade-button buy ${
             suggested === "BUY" ? "recommended" : ""
           }`}
@@ -70,7 +107,7 @@ export default function TradingPanel({
 
         <button
           type="button"
-          onClick={() => onTrade(selectedSensor, "SELL")}
+          onClick={() => onTrade("SELL")}
           className={`trade-button sell ${
             suggested === "SELL" ? "recommended" : ""
           }`}
@@ -79,13 +116,19 @@ export default function TradingPanel({
         </button>
       </div>
 
+      {/* EVALUATION METRICS */}
       <div className="evaluation-section">
         <h4 className="panel-heading">EVALUATION</h4>
 
         <div className="metric-row">
           <span>Accuracy</span>
+
           <strong
-            className={Number(accuracy) > 60 ? "positive-text" : "negative-text"}
+            className={
+              Number(accuracy) > 60
+                ? "positive-text"
+                : "negative-text"
+            }
           >
             {accuracy}%
           </strong>
@@ -93,6 +136,7 @@ export default function TradingPanel({
 
         <div className="metric-row">
           <span>Signal Strength</span>
+
           <strong>{strength}</strong>
         </div>
       </div>
