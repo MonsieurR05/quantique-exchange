@@ -7,7 +7,6 @@
  */
 
 import React from "react";
-
 import {
   LineChart,
   Line,
@@ -39,8 +38,9 @@ export default function SensorChart({
 
           <p className="chart-caption">
             Live chart checks for new sensor readings every{" "}
-            {refreshIntervalMs / 1000} seconds. Current points loaded:{" "}
-            {data.length}
+            {refreshIntervalMs / 1000} second. Binary 0/1 sensors are avoided
+            by default so the first chart is easier to understand. Current
+            points loaded: {data.length}
           </p>
         </div>
 
@@ -50,21 +50,25 @@ export default function SensorChart({
       </div>
 
       <div className="chart-card">
-        <LineChart width={750} height={320} data={chartData}>
-          <CartesianGrid stroke="#222" />
-          <XAxis dataKey="liveDisplayTime" stroke="#888" minTickGap={35} />
-          <YAxis stroke="#888" />
-          <Tooltip />
-          <Line
-            type="monotone"
-            dataKey="value"
-            stroke="#00ff9f"
-            strokeWidth={2}
-            dot={false}
-            isAnimationActive={true}
-            animationDuration={500}
-          />
-        </LineChart>
+        {data.length === 0 ? (
+          <p className="empty-state">Waiting for chart data...</p>
+        ) : (
+          <LineChart width={750} height={320} data={chartData}>
+            <CartesianGrid stroke="#222" />
+            <XAxis dataKey="liveDisplayTime" stroke="#888" minTickGap={35} />
+            <YAxis stroke="#888" />
+            <Tooltip />
+            <Line
+              type="monotone"
+              dataKey="value"
+              stroke="#00ff9f"
+              strokeWidth={2}
+              dot={false}
+              isAnimationActive={true}
+              animationDuration={500}
+            />
+          </LineChart>
+        )}
       </div>
     </section>
   );

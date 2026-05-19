@@ -21,9 +21,58 @@ import TradingPanel from "./TradingPanel";
 import "../styles/SensorDashboard.css";
 
 const API_URL = "http://localhost:5001/data";
-const REFRESH_INTERVAL_MS = 3000;
+const REFRESH_INTERVAL_MS = 1000;
 const STRATEGY_WINDOW = 10;
 
+/**
+ * Checks whether a processed sensor only returns binary values.
+ * Binary sensors such as door/contact sensors usually produce 0/1 values,
+ * which can make the chart look static or visually unclear for users.
+ */
+function isBinarySensor(readings) {
+  if (!readings || readings.length === 0) return true;
+
+  const uniqueValues = new Set(
+    readings
+      .map((reading) => Number(reading.value))
+      .filter((value) => !Number.isNaN(value))
+  );
+
+  return (
+    uniqueValues.size <= 2 &&
+    [...uniqueValues].every((value) => value === 0 || value === 1)
+  );
+}
+
+/**
+ * Chooses a clearer default sensor for the main chart.
+ * Non-binary sensors are prioritised so the first chart shown has smoother
+ * visual movement and feels more live to beginner users.
+ */
+function chooseDefaultSensor(updatedSensors) {
+  const sensorEntries = Object.entries(updatedSensors);
+
+  const nonBinarySensor = sensorEntries.find(([sensorName, readings]) => {
+    const lowerName = sensorName.toLowerCase();
+
+    const likelyBinarySensor =
+      lowerName.includes("door") ||
+      lowerName.includes("motion") ||
+      lowerName.includes("leak");
+
+    return !likelyBinarySensor && !isBinarySensor(readings);
+  });
+
+  if (nonBinarySensor) {
+    return nonBinarySensor[0];
+  }
+
+  return (
+    sensorEntries.find(([, readings]) => !isBinarySensor(readings))?.[0] ||
+    sensorEntries[0]?.[0] ||
+    null
+  );
+}
 export default function SensorDashboard() {
   const [sensorData, setSensorData] = useState({});
   const [loading, setLoading] = useState(true);
@@ -73,11 +122,13 @@ export default function SensorDashboard() {
         setSensorData(updated);
 
         setSelectedSensor((currentSensor) => {
-          if (currentSensor && updated[currentSensor]) {
+          const currentReadings = updated[currentSensor];
+
+          if (currentSensor && currentReadings && !isBinarySensor(currentReadings)) {
             return currentSensor;
           }
 
-          return Object.keys(updated)[0] || null;
+          return chooseDefaultSensor(updated);
         });
 
         setLastUpdated(new Date());
