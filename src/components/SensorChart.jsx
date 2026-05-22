@@ -1,9 +1,9 @@
 /**
  * SensorChart
  *
- * Displays the selected sensor as a live line chart.
- * It uses chartTime.js to normalise the x-axis labels so the chart appears
- * as a live feed with evenly spaced timestamps.
+ * Displays the selected market asset as a live line chart.
+ * Company names are shown clearly, while backend sensor IDs are shown
+ * quietly in square brackets for technical transparency.
  */
 
 import React from "react";
@@ -21,6 +21,7 @@ import { addLiveDisplayTimes } from "../utils/chartTime";
 export default function SensorChart({
   data,
   selectedSensor,
+  displayName,
   refreshing,
   refreshIntervalMs,
   lastUpdated,
@@ -33,14 +34,17 @@ export default function SensorChart({
       <div className="chart-header">
         <div>
           <h3 className="chart-title">
-            {selectedSensor || "No sensor selected"}
+            {displayName || "No asset selected"}
+
+            {selectedSensor && (
+              <span className="chart-source">[{selectedSensor}]</span>
+            )}
           </h3>
 
           <p className="chart-caption">
-            Live chart checks for new sensor readings every{" "}
-            {refreshIntervalMs / 1000} second. Binary 0/1 sensors are avoided
-            by default so the first chart is easier to understand. Current
-            points loaded: {data.length}
+            Live chart checks for new market readings every{" "}
+            {refreshIntervalMs / 1000} second. Current points loaded:{" "}
+            {data.length}.
           </p>
         </div>
 

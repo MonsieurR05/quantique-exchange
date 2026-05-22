@@ -37,12 +37,16 @@ export default function TradingPanel({
       <div className="metric-card">
         <div className="metric-row">
           <span>Selected Asset</span>
-          <strong>{displayName || selectedSensor}</strong>
+          <strong>{displayName || "-"}</strong>
         </div>
+
+        {selectedSensor && (
+          <div className="selected-source">[{selectedSensor}]</div>
+        )}
 
         <div className="metric-row">
           <span>Market Price</span>
-          <strong>${latest?.value ?? "-"}</strong>
+          <strong>${latest?.value?.toFixed(2) ?? "-"}</strong>
         </div>
 
         <div className="metric-row">
@@ -125,9 +129,7 @@ export default function TradingPanel({
 
           <strong
             className={
-              Number(accuracy) > 60
-                ? "positive-text"
-                : "negative-text"
+              Number(accuracy) > 60 ? "positive-text" : "negative-text"
             }
           >
             {accuracy}%
