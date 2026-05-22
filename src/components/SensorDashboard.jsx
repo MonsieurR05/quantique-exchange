@@ -35,18 +35,29 @@ const REFRESH_INTERVAL_MS = 1000;
 const STRATEGY_WINDOW = 10;
 
 /**
- * Maps backend sensor IDs to recognisable stock/company names.
- * Backend structure remains unchanged.
+ * Maps backend sensor IDs to recognisable company-style asset names.
+ * The backend sensor IDs are preserved internally.
  */
 const assetNames = {
   DoorSensor302: "BP",
-  MotionSensorEntrance: "Nike",
-  MotionSensorTechOffice: "Shell",
-  MoistureSensorKitchen: "Apple",
-  MoistureSensorMick: "Tesla",
-  MoistureSensorLizzie: "Amazon",
-  MotionSensor308: "Microsoft",
-  WaterSensor301: "Adidas",
+  DoorSensor308: "Shell",
+  DoorSensorEntrance: "Nike",
+  DoorSensorTechOffice: "Apple",
+
+  LeakSensor: "Thames Water",
+
+  "MotionSensor-302": "Uber",
+  "MotionSensor-HCILab": "Tesla",
+  "MotionSensor-Kitchen": "Amazon",
+  MotionSensor308: "Deliveroo",
+
+  "SoilMoistureSensor-Corby": "NVIDIA",
+  "SoilMoistureSensor-Lizzie": "Microsoft",
+  "SoilMoistureSensor-Mick": "Google",
+  "SoilMoistureSensor-Sarah": "Meta",
+
+  "TempHumiditySensor-HCILab": "Samsung",
+  "TempHumiditySensor-Kitchen": "Netflix",
 };
 
 /**
@@ -68,12 +79,13 @@ function isBinarySensor(readings) {
 }
 
 /**
- * Chooses a clearer default sensor for the main chart.
+ * Chooses a clearer default asset for the main chart.
+ * Non-binary assets are prioritised so the dashboard opens on a smoother chart.
  */
 function chooseDefaultSensor(updatedSensors) {
   const sensorEntries = Object.entries(updatedSensors);
 
-  const nonBinarySensor = sensorEntries.find(([sensorName, readings]) => {
+  const preferredSensor = sensorEntries.find(([sensorName, readings]) => {
     const lowerName = sensorName.toLowerCase();
 
     const likelyBinarySensor =
@@ -84,8 +96,8 @@ function chooseDefaultSensor(updatedSensors) {
     return !likelyBinarySensor && !isBinarySensor(readings);
   });
 
-  if (nonBinarySensor) {
-    return nonBinarySensor[0];
+  if (preferredSensor) {
+    return preferredSensor[0];
   }
 
   return (
@@ -95,131 +107,93 @@ function chooseDefaultSensor(updatedSensors) {
   );
 }
 
-export default function SensorDashboard() {
-  /**
-   * Stores processed market asset data.
-   */
-  const [sensorData, setSensorData] = useState({});
+/**
+ * Converts processed sensor readings into simulated market-style prices.
+ */
+function createSimulatedMarketData(rawReadings) {
+  return preprocessData(rawReadings).map((reading, index) => {
+    const simulatedPrice =
+      100 +
+      Number(reading.value) * 31 +
+      Math.sin(index / 2) * 8 +
+      Math.random() * 5;
 
-  /**
-   * Loading and API states.
-   */
+    return {
+      ...reading,
+      value: Number(simulatedPrice.toFixed(2)),
+    };
+  });
+}
+
+export default function SensorDashboard() {
+  const [sensorData, setSensorData] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  /**
-   * Selected active asset.
-   */
   const [selectedSensor, setSelectedSensor] = useState(null);
-
-  /**
-   * Stores latest BUY/SELL position.
-   */
   const [positions, setPositions] = useState({});
 
-  /**
-   * Simulated portfolio balance.
-   */
   const [balance, setBalance] = useState(10000);
-
-  /**
-   * Stores owned shares per asset.
-   */
   const [portfolio, setPortfolio] = useState({});
 
-  /**
-   * Live refresh state.
-   */
   const [lastUpdated, setLastUpdated] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [refreshCount, setRefreshCount] = useState(0);
 
-  /**
-   * Trading strategy instances.
-   */
   const strategies = [
     new MomentumStrategy(),
     new MovingAverageStrategy(STRATEGY_WINDOW),
     new OrderFlowImbalanceStrategy(STRATEGY_WINDOW),
   ];
 
-  /**
-   * Executes simulated BUY and SELL actions.
-   */
   const handleTrade = (sensor, action, price) => {
     if (!sensor || !price) return;
 
-    /**
-     * BUY LOGIC
-     */
     if (action === "BUY" && balance >= price) {
-      setBalance((prev) => prev - price);
+      setBalance((previousBalance) => previousBalance - price);
 
-      setPortfolio((prev) => ({
-        ...prev,
-        [sensor]: (prev[sensor] || 0) + 1,
+      setPortfolio((previousPortfolio) => ({
+        ...previousPortfolio,
+        [sensor]: (previousPortfolio[sensor] || 0) + 1,
       }));
 
-      setPositions((prev) => ({
-        ...prev,
+      setPositions((previousPositions) => ({
+        ...previousPositions,
         [sensor]: "BUY",
       }));
     }
 
-    /**
-     * SELL LOGIC
-     */
     if (action === "SELL" && (portfolio[sensor] || 0) > 0) {
-      setBalance((prev) => prev + price);
+      setBalance((previousBalance) => previousBalance + price);
 
-      setPortfolio((prev) => ({
-        ...prev,
-        [sensor]: prev[sensor] - 1,
+      setPortfolio((previousPortfolio) => ({
+        ...previousPortfolio,
+        [sensor]: previousPortfolio[sensor] - 1,
       }));
 
-      setPositions((prev) => ({
-        ...prev,
+      setPositions((previousPositions) => ({
+        ...previousPositions,
         [sensor]: "SELL",
       }));
     }
   };
 
-  /**
-   * Fetches live sensor data continuously.
-   * Live refresh system intentionally preserved.
-   */
   useEffect(() => {
     const fetchData = async () => {
       try {
         setRefreshing(true);
 
-        const res = await fetch(API_URL);
+        const response = await fetch(API_URL);
 
-        if (!res.ok) {
+        if (!response.ok) {
           throw new Error("Backend error");
         }
 
-        const json = await res.json();
-
+        const json = await response.json();
         const updated = {};
 
-        Object.entries(json).forEach(([sensorName, raw]) => {
-          /**
-           * Converts binary sensor values into stock-style prices.
-           * Creates more realistic market movement.
-           */
-          const processed = preprocessData(raw).map((reading, index) => {
-            const simulatedPrice =
-              100 +
-              Number(reading.value) * 31 +
-              Math.sin(index / 2) * 8 +
-              Math.random() * 5;
-
-            return {
-              ...reading,
-              value: Number(simulatedPrice.toFixed(2)),
-            };
-          });
+        Object.entries(json).forEach(([sensorName, rawReadings]) => {
+          const processed = createSimulatedMarketData(rawReadings);
 
           if (processed.length > 0) {
             updated[sensorName] = processed;
@@ -228,9 +202,6 @@ export default function SensorDashboard() {
 
         setSensorData(updated);
 
-        /**
-         * Keeps current selection if still valid.
-         */
         setSelectedSensor((currentSensor) => {
           const currentReadings = updated[currentSensor];
 
@@ -247,10 +218,9 @@ export default function SensorDashboard() {
 
         setLastUpdated(new Date());
         setRefreshCount((count) => count + 1);
-
         setError(null);
       } catch (err) {
-        setError("Failed to load sensor data");
+        setError("Failed to load market data");
       } finally {
         setLoading(false);
         setRefreshing(false);
@@ -264,35 +234,19 @@ export default function SensorDashboard() {
     return () => clearInterval(interval);
   }, []);
 
-  /**
-   * Selected asset dataset.
-   */
   const data = sensorData[selectedSensor] || [];
 
-  /**
-   * Generates strategy signals.
-   */
   const signals = strategies.map((strategy) => ({
     name: strategy.name,
     signal: strategy.generateSignal(data),
   }));
 
-  /**
-   * Uses Momentum strategy as primary recommendation.
-   */
   const suggested =
     signals.find((signal) => signal.name === "Momentum")?.signal || "HOLD";
 
-  /**
-   * Latest market reading.
-   */
   const latest = data[data.length - 1];
 
-  /**
-   * Evaluation metrics.
-   */
   const positive = data.filter((reading) => reading.return > 0).length;
-
   const negative = data.filter((reading) => reading.return < 0).length;
 
   const accuracy =
@@ -310,13 +264,13 @@ export default function SensorDashboard() {
         ).toFixed(2)
       : "0";
 
+  const displayName = assetNames[selectedSensor] || selectedSensor;
+
   return (
     <div className="sensor-dashboard">
       <header className="dashboard-header">
         <div>
-          <h2 className="dashboard-title">
-            Quantique Exchange
-          </h2>
+          <h2 className="dashboard-title">Quantique Exchange</h2>
 
           <p className="dashboard-subtitle">
             Live simulated market assets generated from UAL IoT data streams.
@@ -331,15 +285,11 @@ export default function SensorDashboard() {
       </header>
 
       {loading && (
-        <p className="dashboard-message">
-          Loading market data...
-        </p>
+        <p className="dashboard-message">Loading market data...</p>
       )}
 
       {error && (
-        <p className="dashboard-message dashboard-error">
-          {error}
-        </p>
+        <p className="dashboard-message dashboard-error">{error}</p>
       )}
 
       <main className="dashboard-layout">
@@ -353,9 +303,7 @@ export default function SensorDashboard() {
         <SensorChart
           data={data}
           selectedSensor={selectedSensor}
-          displayName={
-            assetNames[selectedSensor] || selectedSensor
-          }
+          displayName={displayName}
           refreshing={refreshing}
           refreshIntervalMs={REFRESH_INTERVAL_MS}
           lastUpdated={lastUpdated}
@@ -366,18 +314,12 @@ export default function SensorDashboard() {
           signals={signals}
           suggested={suggested}
           selectedSensor={selectedSensor}
-          displayName={
-            assetNames[selectedSensor] || selectedSensor
-          }
+          displayName={displayName}
           position={positions[selectedSensor]}
           balance={balance}
           portfolio={portfolio}
           onTrade={(action) =>
-            handleTrade(
-              selectedSensor,
-              action,
-              latest?.value
-            )
+            handleTrade(selectedSensor, action, latest?.value)
           }
           accuracy={accuracy}
           strength={strength}

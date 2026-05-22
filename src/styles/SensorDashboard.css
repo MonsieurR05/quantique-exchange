@@ -87,12 +87,12 @@
 
 .dashboard-layout {
   display: grid;
-  grid-template-columns: 240px minmax(0, 1fr) 420px;
+  grid-template-columns: 250px minmax(0, 1fr) 340px;
   height: calc(100vh - 78px);
 }
 
 /* -----------------------------
-   LEFT SENSOR PANEL
+   LEFT MARKET WATCHLIST
 ----------------------------- */
 
 .left-panel {
@@ -135,7 +135,22 @@
 .sensor-item.active {
   background: #1f1f1f;
   border-color: #333;
-  color: #ffffff;
+}
+
+.asset-name {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  color: #f5f5f5;
+}
+
+.sensor-source {
+  display: block;
+  margin-top: 3px;
+  color: #6f6f6f;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.3;
 }
 
 .empty-state {
@@ -163,8 +178,16 @@
 
 .chart-title {
   margin: 0;
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 600;
+}
+
+.chart-source {
+  display: inline;
+  margin-left: 8px;
+  color: #777;
+  font-size: 12px;
+  font-weight: 400;
 }
 
 .chart-caption {
@@ -227,6 +250,14 @@
   color: #9c9c9c;
 }
 
+.metric-row strong {
+  color: #f5f5f5;
+}
+
+/* -----------------------------
+   SIGNALS
+----------------------------- */
+
 .signal-list {
   display: flex;
   flex-direction: column;
@@ -265,6 +296,10 @@
   font-size: 14px;
 }
 
+/* -----------------------------
+   POSITION / PORTFOLIO
+----------------------------- */
+
 .position-row {
   display: flex;
   align-items: center;
@@ -276,6 +311,40 @@
 
 .position-row span {
   color: #aaa;
+}
+
+.balance-card,
+.portfolio-card {
+  padding: 12px;
+  border: 1px solid #252525;
+  border-radius: 10px;
+  background: #101010;
+  margin-bottom: 16px;
+}
+
+.balance-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: #00ff9f;
+}
+
+.portfolio-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  color: #cfcfcf;
+  margin-bottom: 6px;
+}
+
+.portfolio-row:last-child {
+  margin-bottom: 0;
+}
+
+.portfolio-empty {
+  color: #777;
+  font-size: 13px;
 }
 
 /* -----------------------------
@@ -337,13 +406,17 @@
   color: #ff4d4d;
 }
 
+.neutral-text {
+  color: #f6c76b;
+}
+
 /* -----------------------------
    RESPONSIVE
 ----------------------------- */
 
 @media (max-width: 1100px) {
   .dashboard-layout {
-    grid-template-columns: 220px 1fr;
+    grid-template-columns: 230px 1fr;
   }
 
   .right-panel {

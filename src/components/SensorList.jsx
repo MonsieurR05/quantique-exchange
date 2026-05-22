@@ -25,18 +25,23 @@ export default function SensorList({
           <p className="empty-state">No market assets available</p>
         )}
 
-        {sensors.map((sensor) => (
-          <button
-            key={sensor}
-            type="button"
-            onClick={() => onSelectSensor(sensor)}
-            className={`sensor-item ${
-              selectedSensor === sensor ? "active" : ""
-            }`}
-          >
-            {assetNames[sensor] || sensor}
-          </button>
-        ))}
+        {sensors.map((sensor) => {
+          const displayName = assetNames?.[sensor] || sensor;
+
+          return (
+            <button
+              key={sensor}
+              type="button"
+              onClick={() => onSelectSensor(sensor)}
+              className={`sensor-item ${
+                selectedSensor === sensor ? "active" : ""
+              }`}
+            >
+              <span className="asset-name">{displayName}</span>
+              <span className="sensor-source">[{sensor}]</span>
+            </button>
+          );
+        })}
       </div>
     </aside>
   );
