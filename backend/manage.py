@@ -1,8 +1,17 @@
+"""Developer CLI for testing Quantique Exchange backend routes.
+
+This script provides terminal commands for checking the Flask backend without
+manually opening each route in the browser. It is intended for development and
+testing workflows.
+"""
+
 import argparse
 import json
 import os
+
 import requests
 from dotenv import load_dotenv
+
 
 load_dotenv()
 
@@ -12,7 +21,17 @@ REQUEST_TIMEOUT_SECONDS = 10
 
 
 def call_backend_route(route, force_refresh=False, timeout=REQUEST_TIMEOUT_SECONDS):
-   
+    """Calls a backend route and returns the JSON response.
+
+    Args:
+        route (str): Backend route path to call, such as "/health" or "/data".
+        force_refresh (bool): Whether to pass a refresh query parameter.
+        timeout (int): Maximum number of seconds to wait for the request.
+
+    Returns:
+        dict: Parsed JSON response from the backend, or an error dictionary if
+        the request fails.
+    """
     url = f"{BACKEND_URL}{route}"
 
     params = {}
@@ -54,13 +73,16 @@ def call_backend_route(route, force_refresh=False, timeout=REQUEST_TIMEOUT_SECON
 
 
 def print_json(data):
-    """
-    Pretty-print CLI output as readable JSON.
+    """Prints dictionary data as readable JSON.
+
+    Args:
+        data (dict): Data to print to the terminal.
     """
     print(json.dumps(data, indent=2))
 
 
 def main():
+    """Parses CLI commands and calls the matching backend route."""
     parser = argparse.ArgumentParser(
         description="Developer CLI for testing Quantique Exchange backend routes."
     )
