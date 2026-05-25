@@ -81,6 +81,24 @@ def print_json(data):
     print(json.dumps(data, indent=2))
 
 
+def print_data_summary(data):
+    """Prints a readable summary for the full /data response.
+
+    Args:
+        data (dict): Grouped sensor data returned by the backend.
+    """
+    summary = {
+        sensor_name: len(readings)
+        for sensor_name, readings in data.items()
+    }
+
+    print_json({
+        "message": "Full data response hidden to avoid terminal spam.",
+        "sensor_count": len(summary),
+        "reading_counts": summary,
+        "hint": "Use --full to print the complete /data JSON response.",
+    })
+
 def main():
     """Parses CLI commands and calls the matching backend route."""
     parser = argparse.ArgumentParser(
@@ -99,6 +117,12 @@ def main():
         help="Force refresh cached backend data where supported.",
     )
 
+    parser.add_argument(
+        "--full",
+        action="store_true",
+        help="Print the full JSON response instead of a summary.",
+    )
+
     args = parser.parse_args()
 
     route_map = {
@@ -114,7 +138,10 @@ def main():
         timeout=20 if args.command == "data" else REQUEST_TIMEOUT_SECONDS,
     )
 
-    print_json(result)
+    if args.command == "data" and not args.full:
+        print_data_summary(result)
+    else:
+        print_json(result)
 
 
 if __name__ == "__main__":
