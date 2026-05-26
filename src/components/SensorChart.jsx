@@ -6,9 +6,9 @@
  * Features:
  * - Line chart mode
  * - Area chart mode
- * - Live refresh indicators
- * - Bloomberg-inspired visual styling
- * - Chart variation controls
+ * - Live refresh indicator
+ * - Responsive chart sizing
+ * - Company asset name with original sensor source
  */
 
 import React, { useState } from "react";
@@ -33,156 +33,76 @@ export default function SensorChart({
   refreshIntervalMs,
   lastUpdated,
 }) {
-  /**
-   * Stores selected chart visualisation type.
-   */
-  const [chartType, setChartType] = useState("line");
+  const [chartType, setChartType] = useState("area");
 
   /**
-   * Limits rendered chart points for performance.
+   * Limits rendered points for performance and keeps the chart readable.
    */
   const chartData = data.slice(-120);
 
   return (
     <section className="chart-panel">
-      {/* HEADER */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          marginBottom: "18px",
-        }}
-      >
+      <div className="chart-header">
         <div>
-          <h2
-            style={{
-              margin: 0,
-              fontSize: "26px",
-              color: "white",
-            }}
-          >
+          <h2 className="chart-title">
             {displayName || "No Asset Selected"}
 
             {selectedSensor && (
-              <span
-                style={{
-                  marginLeft: "10px",
-                  color: "#777",
-                  fontSize: "14px",
-                  fontWeight: "normal",
-                }}
-              >
-                [{selectedSensor}]
-              </span>
+              <span className="chart-source">[{selectedSensor}]</span>
             )}
           </h2>
 
-          <p
-            style={{
-              color: "#888",
-              marginTop: "8px",
-              marginBottom: 0,
-              fontSize: "14px",
-            }}
-          >
+          <p className="chart-caption">
             Live chart checks for new market readings every{" "}
-            {refreshIntervalMs / 1000} second.
-            Current points loaded: {chartData.length}.
+            {refreshIntervalMs / 1000} second. Current points loaded:{" "}
+            {chartData.length}.
           </p>
         </div>
 
-        {/* LIVE STATUS */}
-        <div
-          style={{
-            background: "#111",
-            border: "1px solid #222",
-            padding: "12px 18px",
-            borderRadius: "999px",
-            color: refreshing ? "#ffd166" : "#00ffae",
-            fontSize: "14px",
-            fontWeight: "bold",
-          }}
-        >
+        <div className="chart-update-badge">
           {refreshing ? "Refreshing data" : "Live"}
         </div>
       </div>
 
-      {/* CHART CONTROLS */}
-      <div
-        style={{
-          display: "flex",
-          gap: "12px",
-          marginBottom: "18px",
-        }}
-      >
+      <div className="chart-controls">
         <button
+          type="button"
           onClick={() => setChartType("line")}
-          style={{
-            background:
-              chartType === "line"
-                ? "#00ffae"
-                : "#111",
-            color:
-              chartType === "line"
-                ? "black"
-                : "white",
-            border: "1px solid #222",
-            padding: "10px 16px",
-            borderRadius: "8px",
-            cursor: "pointer",
-            fontWeight: "bold",
-          }}
+          className={`chart-control-button ${
+            chartType === "line" ? "active" : ""
+          }`}
         >
           Line Chart
         </button>
 
         <button
+          type="button"
           onClick={() => setChartType("area")}
-          style={{
-            background:
-              chartType === "area"
-                ? "#00ffae"
-                : "#111",
-            color:
-              chartType === "area"
-                ? "black"
-                : "white",
-            border: "1px solid #222",
-            padding: "10px 16px",
-            borderRadius: "8px",
-            cursor: "pointer",
-            fontWeight: "bold",
-          }}
+          className={`chart-control-button ${
+            chartType === "area" ? "active" : ""
+          }`}
         >
           Area Chart
         </button>
       </div>
 
-      {/* CHART CONTAINER */}
-      <div
-        style={{
-          width: "100%",
-          height: "520px",
-          background: "#050505",
-          border: "1px solid #1a1a1a",
-          borderRadius: "18px",
-          padding: "20px",
-        }}
-      >
-        <ResponsiveContainer width="100%" height="100%">
-          <>
-            {/* LINE CHART */}
-            {chartType === "line" && (
+      <div className="chart-card">
+        {chartData.length === 0 ? (
+          <p className="empty-state">Waiting for chart data...</p>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
+            {chartType === "line" ? (
               <LineChart data={chartData}>
                 <CartesianGrid stroke="#1f1f1f" />
 
                 <XAxis
                   dataKey="displayTime"
                   stroke="#666"
+                  minTickGap={45}
+                  tick={{ fontSize: 11 }}
                 />
 
-                <YAxis stroke="#666" />
+                <YAxis stroke="#666" tick={{ fontSize: 11 }} />
 
                 <Tooltip
                   contentStyle={{
@@ -197,23 +117,24 @@ export default function SensorChart({
                   type="monotone"
                   dataKey="value"
                   stroke="#00ffae"
-                  strokeWidth={3}
+                  strokeWidth={2}
                   dot={false}
+                  isAnimationActive={true}
+                  animationDuration={450}
                 />
               </LineChart>
-            )}
-
-            {/* AREA CHART */}
-            {chartType === "area" && (
+            ) : (
               <AreaChart data={chartData}>
                 <CartesianGrid stroke="#1f1f1f" />
 
                 <XAxis
                   dataKey="displayTime"
                   stroke="#666"
+                  minTickGap={45}
+                  tick={{ fontSize: 11 }}
                 />
 
-                <YAxis stroke="#666" />
+                <YAxis stroke="#666" tick={{ fontSize: 11 }} />
 
                 <Tooltip
                   contentStyle={{
@@ -229,26 +150,20 @@ export default function SensorChart({
                   dataKey="value"
                   stroke="#00ffae"
                   fill="#00ffae22"
-                  strokeWidth={3}
+                  strokeWidth={2}
+                  dot={false}
+                  isAnimationActive={true}
+                  animationDuration={450}
                 />
               </AreaChart>
             )}
-          </>
-        </ResponsiveContainer>
+          </ResponsiveContainer>
+        )}
       </div>
 
-      {/* FOOTER */}
-      <div
-        style={{
-          marginTop: "14px",
-          color: "#666",
-          fontSize: "13px",
-        }}
-      >
+      <div className="chart-footer">
         Last updated:{" "}
-        {lastUpdated
-          ? lastUpdated.toLocaleTimeString()
-          : "Waiting for data"}
+        {lastUpdated ? lastUpdated.toLocaleTimeString() : "Waiting for data"}
       </div>
     </section>
   );
