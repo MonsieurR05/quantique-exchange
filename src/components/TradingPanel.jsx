@@ -41,29 +41,24 @@ export default function TradingPanel({
   /**
    * Tracks latest displayed price to animate changes.
    */
-  const [previousPrice, setPreviousPrice] =
-    useState(null);
+  const [previousPrice, setPreviousPrice] = useState(null);
 
   /**
    * Determines whether latest price increased or decreased.
    */
-  const [priceDirection, setPriceDirection] =
-    useState("neutral");
+  const [priceDirection, setPriceDirection] = useState("neutral");
 
   /**
    * Detects price movement direction.
    */
   useEffect(() => {
-    if (
-      previousPrice !== null &&
-      latest?.value !== undefined
-    ) {
+    if (previousPrice !== null && latest?.value !== undefined) {
       if (latest.value > previousPrice) {
         setPriceDirection("up");
-      } else if (
-        latest.value < previousPrice
-      ) {
+      } else if (latest.value < previousPrice) {
         setPriceDirection("down");
+      } else {
+        setPriceDirection("neutral");
       }
     }
 
@@ -73,16 +68,13 @@ export default function TradingPanel({
   }, [latest?.value, previousPrice]);
 
   /**
-   * Calculates unrealised profit/loss.
+   * Calculates unrealised profit/loss compared to the initial balance.
    */
-  const unrealisedPnL =
-    totalEquity - 10000;
+  const unrealisedPnL = totalEquity - 10000;
 
   return (
     <aside className="right-panel">
-      <h4 className="panel-heading">
-        TRADING PANEL
-      </h4>
+      <h4 className="panel-heading">TRADING PANEL</h4>
 
       {/* ASSET INFORMATION */}
       <div className="metric-card">
@@ -92,22 +84,11 @@ export default function TradingPanel({
             <InfoTooltip text="Currently selected simulated market asset." />
           </span>
 
-          <strong>
-            {displayName || selectedSensor}
-          </strong>
+          <strong>{displayName || selectedSensor}</strong>
         </div>
 
         {selectedSensor && (
-          <div
-            style={{
-              color: "#666",
-              fontSize: "12px",
-              marginTop: "6px",
-              marginBottom: "10px",
-            }}
-          >
-            [{selectedSensor}]
-          </div>
+          <div className="selected-source">[{selectedSensor}]</div>
         )}
 
         <div className="metric-row">
@@ -124,7 +105,6 @@ export default function TradingPanel({
                   : priceDirection === "down"
                   ? "#ff4d4d"
                   : "white",
-
               transition: "0.2s ease",
             }}
           >
@@ -138,9 +118,7 @@ export default function TradingPanel({
             <InfoTooltip text="Percentage movement between recent market values." />
           </span>
 
-          <strong>
-            {latest?.return?.toFixed(2) ?? "-"}
-          </strong>
+          <strong>{latest?.return?.toFixed(2) ?? "-"}</strong>
         </div>
       </div>
 
@@ -152,9 +130,7 @@ export default function TradingPanel({
             <InfoTooltip text="Remaining simulated trading capital available for new trades." />
           </span>
 
-          <strong>
-            ${balance?.toFixed(2)}
-          </strong>
+          <strong>${balance?.toFixed(2) ?? "0.00"}</strong>
         </div>
 
         <div className="metric-row">
@@ -163,9 +139,7 @@ export default function TradingPanel({
             <InfoTooltip text="Number of shares currently owned for this asset." />
           </span>
 
-          <strong>
-            {portfolio?.[selectedSensor] || 0}
-          </strong>
+          <strong>{portfolio?.[selectedSensor] || 0}</strong>
         </div>
 
         <div className="metric-row">
@@ -174,9 +148,7 @@ export default function TradingPanel({
             <InfoTooltip text="Current value of owned shares based on live market price." />
           </span>
 
-          <strong>
-            ${portfolioValue?.toFixed(2)}
-          </strong>
+          <strong>${portfolioValue?.toFixed(2) ?? "0.00"}</strong>
         </div>
 
         <div className="metric-row">
@@ -185,9 +157,7 @@ export default function TradingPanel({
             <InfoTooltip text="Combined value of portfolio balance and owned assets." />
           </span>
 
-          <strong>
-            ${totalEquity?.toFixed(2)}
-          </strong>
+          <strong>${totalEquity?.toFixed(2) ?? "0.00"}</strong>
         </div>
 
         <div className="metric-row">
@@ -196,18 +166,9 @@ export default function TradingPanel({
             <InfoTooltip text="Current simulated profit or loss compared to the initial portfolio balance." />
           </span>
 
-          <strong
-            style={{
-              color:
-                unrealisedPnL >= 0
-                  ? "#00ffae"
-                  : "#ff4d4d",
-            }}
-          >
+          <strong className={unrealisedPnL >= 0 ? "positive-text" : "negative-text"}>
             {unrealisedPnL >= 0 ? "+" : "-"}$
-            {Math.abs(
-              unrealisedPnL
-            ).toFixed(2)}
+            {Math.abs(unrealisedPnL || 0).toFixed(2)}
           </strong>
         </div>
       </div>
@@ -215,33 +176,21 @@ export default function TradingPanel({
       {/* STRATEGY SIGNALS */}
       <div className="signal-list">
         {signals.map(({ name, signal }) => (
-          <div
-            key={name}
-            className="signal-row"
-          >
+          <div key={name} className="signal-row">
             <span>
               {name}
-
               <InfoTooltip
                 text={
                   name === "Momentum"
                     ? "Measures upward or downward market movement trends."
-                    : name ===
-                      "Moving Average"
+                    : name === "Moving Average"
                     ? "Uses rolling averages to smooth price movement and identify trends."
                     : "Detects imbalance between simulated buying and selling pressure."
                 }
               />
             </span>
 
-            <strong
-              style={{
-                color:
-                  getSignalColor(signal),
-              }}
-            >
-              {signal}
-            </strong>
+            <strong style={{ color: getSignalColor(signal) }}>{signal}</strong>
           </div>
         ))}
       </div>
@@ -255,8 +204,7 @@ export default function TradingPanel({
 
         <strong
           style={{
-            color:
-              getSignalColor(suggested),
+            color: getSignalColor(suggested),
             fontSize: "18px",
           }}
         >
@@ -271,9 +219,7 @@ export default function TradingPanel({
           <InfoTooltip text="Latest BUY or SELL action executed by the user." />
         </span>
 
-        <strong>
-          {position || "NONE"}
-        </strong>
+        <strong>{position || "NONE"}</strong>
       </div>
 
       {/* TRADING CONTROLS */}
@@ -282,26 +228,8 @@ export default function TradingPanel({
           type="button"
           onClick={() => onTrade("BUY")}
           className={`trade-button buy ${
-            suggested === "BUY"
-              ? "recommended"
-              : ""
+            suggested === "BUY" ? "recommended" : ""
           }`}
-          style={{
-            flex: 1,
-            background:
-              suggested === "BUY"
-                ? "#00ffae"
-                : "#111",
-            color:
-              suggested === "BUY"
-                ? "black"
-                : "white",
-            border: "1px solid #222",
-            padding: "14px",
-            borderRadius: "10px",
-            fontWeight: "bold",
-            cursor: "pointer",
-          }}
         >
           BUY
         </button>
@@ -310,23 +238,8 @@ export default function TradingPanel({
           type="button"
           onClick={() => onTrade("SELL")}
           className={`trade-button sell ${
-            suggested === "SELL"
-              ? "recommended"
-              : ""
+            suggested === "SELL" ? "recommended" : ""
           }`}
-          style={{
-            flex: 1,
-            background:
-              suggested === "SELL"
-                ? "#ff4d4d"
-                : "#111",
-            color: "white",
-            border: "1px solid #222",
-            padding: "14px",
-            borderRadius: "10px",
-            fontWeight: "bold",
-            cursor: "pointer",
-          }}
         >
           SELL
         </button>
@@ -334,9 +247,7 @@ export default function TradingPanel({
 
       {/* EVALUATION METRICS */}
       <div className="evaluation-section">
-        <h4 className="panel-heading">
-          EVALUATION
-        </h4>
+        <h4 className="panel-heading">EVALUATION</h4>
 
         <div className="metric-row">
           <span>
@@ -345,12 +256,7 @@ export default function TradingPanel({
           </span>
 
           <strong
-            style={{
-              color:
-                Number(accuracy) > 60
-                  ? "#00ffae"
-                  : "#ff4d4d",
-            }}
+            className={Number(accuracy) > 60 ? "positive-text" : "negative-text"}
           >
             {accuracy}%
           </strong>
@@ -362,9 +268,7 @@ export default function TradingPanel({
             <InfoTooltip text="Measures how strongly the market price is moving over time." />
           </span>
 
-          <strong>
-            {strength}
-          </strong>
+          <strong>{strength}</strong>
         </div>
       </div>
     </aside>

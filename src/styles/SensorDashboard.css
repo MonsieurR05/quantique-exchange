@@ -509,9 +509,10 @@
   color: #050505;
 }
 
+
 .trade-button.sell {
   background: #ff4d4d;
-  color: white;
+   color: #050505;
 }
 
 .trade-button.recommended {
