@@ -551,3 +551,209 @@
     padding: 18px;
   }
 }
+
+/* -----------------------------
+   HEADER ACTIONS
+----------------------------- */
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.help-button {
+  padding: 9px 13px;
+  border: 1px solid #252525;
+  border-radius: 10px;
+  background: #101010;
+  color: #f5f5f5;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.help-button:hover {
+  background: #171717;
+  border-color: #333;
+}
+
+/* -----------------------------
+   TUTORIAL OVERLAY
+----------------------------- */
+
+.tutorial-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(0, 0, 0, 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.tutorial-modal {
+  width: min(760px, 100%);
+  max-height: 90vh;
+  overflow-y: auto;
+  border: 1px solid #2a2a2a;
+  border-radius: 18px;
+  background: #0f0f0f;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+  padding: 22px;
+}
+
+.tutorial-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #222;
+}
+
+.tutorial-header h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.tutorial-header p {
+  margin: 6px 0 0;
+  color: #9c9c9c;
+  font-size: 14px;
+}
+
+.tutorial-close {
+  width: 34px;
+  height: 34px;
+  border: 1px solid #2a2a2a;
+  border-radius: 10px;
+  background: #151515;
+  color: #f5f5f5;
+  font-size: 22px;
+  cursor: pointer;
+}
+
+.tutorial-close:hover {
+  background: #1d1d1d;
+}
+
+.tutorial-steps {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.tutorial-step {
+  display: flex;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid #252525;
+  border-radius: 12px;
+  background: #111;
+}
+
+.tutorial-number {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  border-radius: 50%;
+  background: #1f1f1f;
+  color: #00ff9f;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.tutorial-step h3 {
+  margin: 0 0 5px;
+  font-size: 15px;
+}
+
+.tutorial-step p {
+  margin: 0;
+  color: #9c9c9c;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.tutorial-signal-guide {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 11px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #222;
+}
+
+.tutorial-signal-guide div {
+  padding: 12px;
+  border: 1px solid #252525;
+  border-radius: 12px;
+  background: #111;
+}
+
+.tutorial-signal-guide p {
+  margin: 8px 0 0;
+  color: #aaa;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.signal-pill {
+  display: inline-block;
+  min-width: 52px;
+  padding: 5px 8px;
+  border-radius: 999px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.buy-pill {
+  background: rgba(0, 255, 159, 0.12);
+  color: #00ff9f;
+}
+
+.sell-pill {
+  background: rgba(255, 77, 77, 0.12);
+  color: #ff4d4d;
+}
+
+.hold-pill {
+  background: rgba(246, 199, 107, 0.12);
+  color: #f6c76b;
+}
+
+.tutorial-primary {
+  width: 100%;
+  margin-top: 18px;
+  padding: 12px 14px;
+  border: none;
+  border-radius: 12px;
+  background: #00ff9f;
+  color: #0a0a0a;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.tutorial-primary:hover {
+  opacity: 0.9;
+}
+
+@media (max-width: 760px) {
+  .header-actions {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .tutorial-signal-guide {
+    grid-template-columns: 1fr;
+  }
+}
