@@ -34,6 +34,7 @@ import "../styles/SensorDashboard.css";
 const API_URL = "http://localhost:5001/data";
 const REFRESH_INTERVAL_MS = 1000;
 const STRATEGY_WINDOW = 10;
+const STARTING_BALANCE = 10000;
 
 /**
  * Maps backend sensor IDs to recognisable company-style asset names.
@@ -134,7 +135,7 @@ export default function SensorDashboard() {
   const [selectedSensor, setSelectedSensor] = useState(null);
   const [positions, setPositions] = useState({});
 
-  const [balance, setBalance] = useState(10000);
+  const [balance, setBalance] = useState(STARTING_BALANCE);
   const [portfolio, setPortfolio] = useState({});
 
   const [lastUpdated, setLastUpdated] = useState(null);
@@ -152,6 +153,8 @@ export default function SensorDashboard() {
   const handleTrade = (sensor, action, price) => {
     if (!sensor || !price) return;
 
+    const ownedShares = portfolio[sensor] || 0;
+
     if (action === "BUY" && balance >= price) {
       setBalance((previousBalance) => previousBalance - price);
 
@@ -166,12 +169,12 @@ export default function SensorDashboard() {
       }));
     }
 
-    if (action === "SELL" && (portfolio[sensor] || 0) > 0) {
+    if (action === "SELL" && ownedShares > 0) {
       setBalance((previousBalance) => previousBalance + price);
 
       setPortfolio((previousPortfolio) => ({
         ...previousPortfolio,
-        [sensor]: previousPortfolio[sensor] - 1,
+        [sensor]: Math.max((previousPortfolio[sensor] || 0) - 1, 0),
       }));
 
       setPositions((previousPositions) => ({
@@ -249,6 +252,14 @@ export default function SensorDashboard() {
 
   const latest = data[data.length - 1];
 
+  /**
+   * Portfolio calculations for the selected asset.
+   */
+  const ownedShares = portfolio[selectedSensor] || 0;
+  const marketPrice = latest?.value || 0;
+  const portfolioValue = ownedShares * marketPrice;
+  const totalEquity = balance + portfolioValue;
+
   const positive = data.filter((reading) => reading.return > 0).length;
   const negative = data.filter((reading) => reading.return < 0).length;
 
@@ -325,6 +336,8 @@ export default function SensorDashboard() {
           position={positions[selectedSensor]}
           balance={balance}
           portfolio={portfolio}
+          portfolioValue={portfolioValue}
+          totalEquity={totalEquity}
           onTrade={(action) => handleTrade(selectedSensor, action, latest?.value)}
           accuracy={accuracy}
           strength={strength}
