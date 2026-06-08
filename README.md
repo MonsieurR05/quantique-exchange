@@ -158,7 +158,7 @@ Open Terminal 1.
 Go into the backend folder:
 
 ```bash
-cd backend-python
+cd backend
 ```
 
 Install the Python dependencies:
