@@ -315,7 +315,7 @@ Clicking an asset changes the chart and trading panel.
 
 ### Live Chart
 
-The middle panel shows the selected asset as a line chart.
+The middle panel shows the selected asset as a live line or area chart.
 
 The chart:
 
