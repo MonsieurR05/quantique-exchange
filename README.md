@@ -9,6 +9,7 @@ The project has two main parts:
 
 This is a simulation only. It does not use real financial data or real money.
 
+
 ---
 
 ## What the Project Does
