@@ -1,8 +1,9 @@
 /**
- * Maps technical UAL sensor names to company-style asset names.
+ * assetNames
  *
- * The real sensor name is still available for technical honesty,
- * but the user-facing interface can present the data as a simulated market asset.
+ * Maps backend sensor IDs to company-style asset names.
+ * The original sensor IDs are still preserved internally and shown
+ * in square brackets for transparency.
  */
 
 export const assetNameMap = {
@@ -25,8 +26,4 @@ export const assetNameMap = {
 
   "TempHumiditySensor-HCILab": "Samsung",
   "TempHumiditySensor-Kitchen": "Netflix",
-};
-
-export function getAssetName(sensorName) {
-  return assetNameMap[sensorName] || sensorName;
-}
+}; 

@@ -1,27 +1,38 @@
 /**
- * Moving average strategy.
- * Compares the latest sensor-derived value against the average of recent values.
- * This gives a simple trend-following signal for the dashboard.
+ * MovingAverageStrategy
+ *
+ * Generates a trading signal by comparing the latest value
+ * against the recent moving average.
  */
 
 import TradingStrategy from "./TradingStrategy";
 
-export default class MomentumStrategy extends TradingStrategy {
-    constructor(window = 10) {
-        super("Moving Average");
-        this.window = window;
+export default class MovingAverageStrategy extends TradingStrategy {
+  constructor(window = 10) {
+    super("Moving Average");
+    this.window = window;
+  }
+
+  generateSignal(data) {
+    if (!data || data.length < this.window) {
+      return "HOLD";
     }
 
-    generateSignal(data) {
-        if (data.length < this.window) return "HOLD";   
+    const recentData = data.slice(-this.window);
+    const latest = recentData[recentData.length - 1];
 
-        const slice = data.slice(-this.window);
-        const avg = slice.reduce((sum, d) => sum + d.value, 0) / this.window;
+    const average =
+      recentData.reduce((sum, reading) => sum + Number(reading.value), 0) /
+      recentData.length;
 
-        const latest = data[data.length - 1].value;
-
-        if (latest > avg) return "BUY";
-        if (latest < avg) return "SELL";
-        return "HOLD";
+    if (latest.value > average) {
+      return "BUY";
     }
-}  
+
+    if (latest.value < average) {
+      return "SELL";
+    }
+
+    return "HOLD";
+  }
+}

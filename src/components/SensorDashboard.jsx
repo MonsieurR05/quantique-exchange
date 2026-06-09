@@ -14,6 +14,7 @@
  * - Uses Strategy Pattern for modular trading logic
  * - Preserves backend sensor structure
  * - Converts IoT data into financial-style assets
+ * - Reuses assetNameMap utility instead of duplicating asset names locally
  */
 
 import React, { useEffect, useState } from "react";
@@ -22,6 +23,7 @@ import MomentumStrategy from "../strategies/MomentumStrategy";
 import MovingAverageStrategy from "../strategies/MovingAverageStrategy";
 import OrderFlowImbalanceStrategy from "../strategies/OrderFlowImbalanceStrategy";
 import { preprocessData } from "../utils/sensorProcessing";
+import { assetNameMap } from "../utils/assetNames";
 
 import SensorList from "./SensorList";
 import SensorChart from "./SensorChart";
@@ -35,32 +37,6 @@ const API_URL = "http://localhost:5001/data";
 const REFRESH_INTERVAL_MS = 1000;
 const STRATEGY_WINDOW = 10;
 const STARTING_BALANCE = 10000;
-
-/**
- * Maps backend sensor IDs to recognisable company-style asset names.
- * The backend sensor IDs are preserved internally.
- */
-const assetNames = {
-  DoorSensor302: "BP",
-  DoorSensor308: "Shell",
-  DoorSensorEntrance: "Nike",
-  DoorSensorTechOffice: "Apple",
-
-  LeakSensor: "Thames Water",
-
-  "MotionSensor-302": "Uber",
-  "MotionSensor-HCILab": "Tesla",
-  "MotionSensor-Kitchen": "Amazon",
-  MotionSensor308: "Deliveroo",
-
-  "SoilMoistureSensor-Corby": "NVIDIA",
-  "SoilMoistureSensor-Lizzie": "Microsoft",
-  "SoilMoistureSensor-Mick": "Google",
-  "SoilMoistureSensor-Sarah": "Meta",
-
-  "TempHumiditySensor-HCILab": "Samsung",
-  "TempHumiditySensor-Kitchen": "Netflix",
-};
 
 /**
  * Checks whether a processed sensor only returns binary values.
@@ -276,7 +252,7 @@ export default function SensorDashboard() {
         ).toFixed(2)
       : "0";
 
-  const displayName = assetNames[selectedSensor] || selectedSensor;
+  const displayName = assetNameMap[selectedSensor] || selectedSensor;
 
   return (
     <div className="sensor-dashboard">
@@ -315,7 +291,7 @@ export default function SensorDashboard() {
           sensors={Object.keys(sensorData)}
           selectedSensor={selectedSensor}
           onSelectSensor={setSelectedSensor}
-          assetNames={assetNames}
+          assetNames={assetNameMap}
         />
 
         <SensorChart
