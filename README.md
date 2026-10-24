@@ -515,3 +515,11 @@ Possible future improvements:
 Quantique Exchange is a live IoT data dashboard presented as a trading simulation. The backend fetches UAL sensor data, the frontend turns it into market-style assets, and users can view charts, read trading signals, and simulate BUY/SELL actions.
 
 The project focuses on clear data flow, simple interaction, modular code, and user feedback-led improvements.
+
+---
+
+## Credits
+
+Built as a two-person team project on the Computer Science course at University of the Arts London. I worked on the Flask backend routes and developer CLI, the trading strategy classes, and the project documentation. My teammate led the dashboard design and trading interactions. The starter template was provided by the course.
+
+Before this copy was published, the commit history was cleaned: teammate and staff details were anonymised, and an old API token and internal links were removed.
