@@ -24,7 +24,7 @@ import MovingAverageStrategy from "../strategies/MovingAverageStrategy";
 import OrderFlowImbalanceStrategy from "../strategies/OrderFlowImbalanceStrategy";
 import { preprocessData } from "../utils/sensorProcessing";
 import { assetNameMap } from "../utils/assetNames";
-import { DEMO_MODE, fetchSensorData } from "../api/marketDataSource";
+import { DEMO_MODE, DEMO_SOURCE, fetchSensorData } from "../api/marketDataSource";
 
 import SensorList from "./SensorList";
 import SensorChart from "./SensorChart";
@@ -278,8 +278,9 @@ export default function SensorDashboard() {
 
       {DEMO_MODE && (
         <p className="dashboard-message">
-          Demo mode: replaying a recorded snapshot of real UAL IoT sensor readings.
-          No live connection or API token is used.
+          {DEMO_SOURCE === "recorded"
+            ? "Demo mode: replaying a recorded snapshot of real UAL IoT sensor readings. No live connection or API token is used."
+            : "Demo mode: sensor readings are simulated in your browser. The full version streams live data from the UAL IoT sensor API."}
         </p>
       )}
 
