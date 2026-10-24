@@ -9,6 +9,19 @@ The project has two main parts:
 
 This is a simulation only. It does not use real financial data or real money.
 
+## My Role
+
+This was a two-person team project. My part:
+
+- Extended the Flask API with the summary, latest-reading and per-sensor routes
+- Built the developer CLI (`backend/manage.py`) for testing routes from the terminal
+- Refactored the trading signals into strategy classes behind a shared `TradingStrategy` interface
+- Moved the API credentials out of the code into environment variables, with a startup check
+- Added request timeouts so a slow sensor endpoint can't hang the dashboard
+- Wrote the architecture and testing documentation
+
+My teammate led the Bloomberg-style dashboard design and the trading interactions.
+
 ## Live Demo
 
 **https://monsieurr05.github.io/quantique-exchange/**
@@ -95,9 +108,9 @@ The sensor name in square brackets shows the real data source.
 ## Project Structure
 
 ```text
-Quantique-Exchange/
+quantique-exchange/
 │
-├── backend-python/
+├── backend/
 │   ├── app.py
 │   ├── manage.py
 │   ├── data_wrapper.py
@@ -107,20 +120,24 @@ Quantique-Exchange/
 ├── docs/
 │   ├── architecture.md
 │   ├── testing.md
-│   ├── design-decisions.md
-│   ├── user-feedback-actions.md
-│   ├── coding-standards.md
-│   ├── requirements.md
-│   └── risk-register.md
+│   └── user-feedback-actions.md
 │
 ├── src/
+│   ├── api/
+│   │   ├── marketDataSource.js
+│   │   ├── DataWrapper.js
+│   │   ├── SensorAPIClient.js
+│   │   └── SensorTypes.js
+│   │
 │   ├── components/
 │   │   ├── SensorDashboard.jsx
 │   │   ├── SensorList.jsx
 │   │   ├── SensorChart.jsx
 │   │   ├── LiveStatus.jsx
 │   │   ├── TradingPanel.jsx
-│   │   └── EvaluationPanel.jsx
+│   │   ├── EvaluationPanel.jsx
+│   │   ├── InfoTooltip.jsx
+│   │   └── TutorialOverlay.jsx
 │   │
 │   ├── strategies/
 │   │   ├── TradingStrategy.js
@@ -140,7 +157,9 @@ Quantique-Exchange/
 │   ├── App.jsx
 │   └── main.jsx
 │
+├── .github/workflows/pages.yml
 ├── .env.example
+├── .env.demo
 ├── package.json
 └── README.md
 ```
@@ -159,11 +178,9 @@ You need **two terminals**:
 ## 1. Clone the Project
 
 ```bash
-git clone <repository-url>
-cd Quantique-Exchange
+git clone https://github.com/MonsieurR05/quantique-exchange.git
+cd quantique-exchange
 ```
-
-Replace `<repository-url>` with the GitHub repository link.
 
 ---
 
@@ -183,7 +200,7 @@ Install the Python dependencies:
 python -m pip install -r requirements.txt
 ```
 
-Create a `.env` file inside the `backend-python` folder.
+Create a `.env` file inside the `backend` folder.
 
 Use this format:
 
@@ -233,7 +250,7 @@ Open Terminal 2.
 Go to the main project folder:
 
 ```bash
-cd Quantique-Exchange
+cd quantique-exchange
 ```
 
 Install frontend dependencies:
@@ -286,7 +303,7 @@ The project includes a small backend CLI for route testing.
 In a terminal, go to the backend folder:
 
 ```bash
-cd backend-python
+cd backend
 ```
 
 Run:
@@ -420,7 +437,7 @@ Check that dependencies are installed:
 python -m pip install -r requirements.txt
 ```
 
-Check that the `.env` file exists inside `backend-python`.
+Check that the `.env` file exists inside `backend`.
 
 Check that it includes:
 
@@ -437,7 +454,7 @@ BACKEND_URL=http://127.0.0.1:5001
 Make sure the backend is running:
 
 ```bash
-cd backend-python
+cd backend
 python app.py
 ```
 
@@ -481,11 +498,7 @@ More project documentation is available in the `docs` folder:
 |---|---|
 | `architecture.md` | Explains how the system is structured |
 | `testing.md` | Manual testing checklist |
-| `design-decisions.md` | Explains key technical decisions |
 | `user-feedback-actions.md` | Shows how user feedback affected the project |
-| `coding-standards.md` | Explains code style, comments, and commits |
-| `requirements.md` | Functional and non-functional requirements |
-| `risk-register.md` | Risks and mitigations |
 
 ---
 
@@ -535,6 +548,6 @@ The project focuses on clear data flow, simple interaction, modular code, and us
 
 ## Credits
 
-Built as a two-person team project on the Computer Science course at University of the Arts London. I worked on the Flask backend routes and developer CLI, the trading strategy classes, and the project documentation. My teammate led the dashboard design and trading interactions. The starter template was provided by the course.
+Built as a two-person team project on the Computer Science course at University of the Arts London (see My Role above). The starter template was provided by the course.
 
 Before this copy was published, the commit history was cleaned: teammate and staff details were anonymised, and an old API token and internal links were removed.
