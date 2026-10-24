@@ -24,6 +24,7 @@ import MovingAverageStrategy from "../strategies/MovingAverageStrategy";
 import OrderFlowImbalanceStrategy from "../strategies/OrderFlowImbalanceStrategy";
 import { preprocessData } from "../utils/sensorProcessing";
 import { assetNameMap } from "../utils/assetNames";
+import { DEMO_MODE, fetchSensorData } from "../api/marketDataSource";
 
 import SensorList from "./SensorList";
 import SensorChart from "./SensorChart";
@@ -33,7 +34,6 @@ import TutorialOverlay from "./TutorialOverlay";
 
 import "../styles/SensorDashboard.css";
 
-const API_URL = "http://localhost:5001/data";
 const REFRESH_INTERVAL_MS = 1000;
 const STRATEGY_WINDOW = 10;
 const STARTING_BALANCE = 10000;
@@ -165,13 +165,7 @@ export default function SensorDashboard() {
       try {
         setRefreshing(true);
 
-        const response = await fetch(API_URL);
-
-        if (!response.ok) {
-          throw new Error("Backend error");
-        }
-
-        const json = await response.json();
+        const json = await fetchSensorData();
         const updated = {};
 
         Object.entries(json).forEach(([sensorName, rawReadings]) => {
@@ -281,6 +275,13 @@ export default function SensorDashboard() {
           />
         </div>
       </header>
+
+      {DEMO_MODE && (
+        <p className="dashboard-message">
+          Demo mode: replaying a recorded snapshot of real UAL IoT sensor readings.
+          No live connection or API token is used.
+        </p>
+      )}
 
       {loading && <p className="dashboard-message">Loading market data...</p>}
 

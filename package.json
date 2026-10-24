@@ -16,6 +16,9 @@
   },
   "scripts": {
     "dev": "vite",
+    "dev:demo": "vite --mode demo",
+    "build": "vite build",
+    "build:demo": "vite build --mode demo",
     "start": "node run.js"
   }
 }
