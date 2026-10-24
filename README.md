@@ -9,6 +9,21 @@ The project has two main parts:
 
 This is a simulation only. It does not use real financial data or real money.
 
+## Live Demo
+
+**https://monsieurr05.github.io/quantique-exchange/**
+
+The public demo runs without the backend or an API token. In demo mode, readings for the real UAL sensor names are simulated in the browser and stream in every second, so the charts, strategies and trading panel all work as they do with live data. The full version reads live data from the UAL IoT sensor API through the Flask backend.
+
+To run the demo locally:
+
+```bash
+npm install
+npm run dev:demo
+```
+
+Set `VITE_DEMO_SOURCE=recorded` in `.env.demo` and add `public/demo-data.json` (saved from the backend's `/data` route) to replay recorded readings instead.
+
 
 ---
 
